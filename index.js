@@ -22,6 +22,8 @@ console.log('database connected')
 async function run() {
     try {
         const usersCollection = client.db('havenlyDB').collection('users');
+
+
         app.post('/users', async (req, res) => {
             const user = req.body;
             console.log(user);
@@ -31,6 +33,13 @@ async function run() {
 
         app.get('/users', async (req, res) => {
             const query = {};
+            const users = await usersCollection.find(query).toArray();
+            res.send(users);
+        });
+
+        // get all sellers
+        app.get('/users/sellers', async(req, res)=>{
+            const query = {user: "seller"}; 
             const users = await usersCollection.find(query).toArray();
             res.send(users);
         });
