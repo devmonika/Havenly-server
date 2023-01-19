@@ -18,17 +18,44 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@clu
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 console.log('database connected')
 
+function verifyJWT(req, res, next){
+    const authHeader = req.headers.authorization;
+    if(!authHeader){
+        return res.status(401).send('unauthorized access');
+    }
+
+    const token = authHeader.split(' ')[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN, function(err, decoded){
+        if(err){
+            return res.status(403).send({message:'forbidden access'})
+        }
+        req.decoded = decoded;
+        next();
+    })
+}
 
 
 async function run() {
     try {
         const usersCollection = client.db('havenlyDB').collection('users');
 
-<<<<<<< HEAD
 
-=======
+        //get jwt
+        app.get('/jwt', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+
+            if (user) {
+                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '1h' })
+                console.log(token)
+                console.log(user)
+                return res.send({ accessToken: token })
+            }
+            res.status(403).send({ accessToken: '' })
+        });
+        
         //create users
->>>>>>> 2317a64fc1835b7e93055979649ae66716f35e27
         app.post('/users', async (req, res) => {
             const user = req.body;
             console.log(user);
@@ -43,30 +70,37 @@ async function run() {
             res.send(users);
         });
 
-<<<<<<< HEAD
-        // get all sellers
+
+        // get all seller 
         app.get('/users/sellers', async(req, res)=>{
-            const query = {user: "seller"}; 
+            const query = {user: "Seller"}; 
             const users = await usersCollection.find(query).toArray();
             res.send(users);
         });
-=======
-        //get jwt
-        app.get('/jwt', async (req, res) => {
-            const email = req.query.email;
-            const query = { email: email };
-            const user = await usersCollection.findOne(query);
 
-            if (user) {
-                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '1h' })
-                console.log(token)
-                console.log(user)
-                return res.send({ accessToken: token })
+         // verify user
+         app.put('/users/admin/:email', verifyJWT, async(req, res)=>{
+            const decodedEmail = req.decoded.email;
+            const query = {email: decodedEmail};
+            const users = await usersCollection.findOne(query)
+
+            if(users?.user !== 'admin'){
+                return res.status(403).send({message: 'forbidden access'});
             }
-            res.status(403).send({ accessToken: '' })
-        })
+            
+            const email = req.params.email;
+            const filter = {email: email};
+            const options ={ upsert: true};
+            const updatedDoc ={
+                $set:{
+                    isVerified: 'verified'
+                }
+            }
+            // const result2 = await productsCollection.updateMany(filter, updatedDoc,options);
+            const result = await usersCollection.updateOne(filter, updatedDoc,options);
+            res.send({result});
+          })
 
->>>>>>> 2317a64fc1835b7e93055979649ae66716f35e27
 
     }
     finally {
