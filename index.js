@@ -37,7 +37,9 @@ function verifyJWT(req, res, next){
 
 async function run() {
     try {
+        // Database Collections
         const usersCollection = client.db('havenlyDB').collection('users');
+        const reviewsCollection = client.db('havenlyDB').collection('reviews');
 
 
         //get jwt
@@ -101,6 +103,21 @@ async function run() {
             res.send({result});
           });
 
+        // Reviews Collection
+
+        // get all the reviews
+        app.get('/reviews', async(req, res) => {
+            const query = {};
+            const reviews = await reviewsCollection.find(query).toArray();
+            res.send(reviews);
+        }); 
+
+        // post a review
+        app.post('/reviews', async(req, res) => {
+            const review = req.body;
+            const result = await reviewsCollection.insertOne(review);
+            res.send(result);
+        });
 
     }
     finally {
