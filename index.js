@@ -76,14 +76,13 @@ async function run() {
         // get all seller 
         app.get('/users/sellers', async(req, res)=>{
             const query = {user: "Seller"}; 
-            const users = await usersCollection.find(query).toArray();
-            res.send(users);
+            const result = await usersCollection.find(query).toArray();
+            res.send(result);
         });
 
          // verify user
          app.put('/users/admin/:email', verifyJWT, async(req, res)=>{
             const decodedEmail = req.decoded.email;
-            // console.log(decodedEmail,"decoded email")
             const query = {email: decodedEmail};
             const users = await usersCollection.findOne(query)
 
