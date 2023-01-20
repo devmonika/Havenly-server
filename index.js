@@ -18,6 +18,21 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@clu
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 console.log('database connected')
 
+function verifyJWT(req, res, next){
+    const authHeader = req.headers.authorization;
+    if(!authHeader){
+        return res.status(401).send('unauthorized access');
+    }
+
+    const token = authHeader.split(' ')[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN, function(err, decoded){
+        if(err){
+            return res.status(403).send({message:'forbidden access'})
+        }
+        req.decoded = decoded;
+        next();
+    })
+}
 
 
 async function run() {
@@ -26,20 +41,6 @@ async function run() {
         const usersCollection = client.db('havenlyDB').collection('users');
         const reviewsCollection = client.db('havenlyDB').collection('reviews');
 
-        // users collection
-        app.post('/users', async (req, res) => {
-            const user = req.body;
-            console.log(user);
-            const result = await usersCollection.insertOne(user);
-            res.send(result);
-        });
-
-        //get users
-        app.get('/users', async (req, res) => {
-            const query = {};
-            const users = await usersCollection.find(query).toArray();
-            res.send(users);
-        });
 
         //get jwt
         app.get('/jwt', async (req, res) => {
@@ -54,7 +55,53 @@ async function run() {
                 return res.send({ accessToken: token })
             }
             res.status(403).send({ accessToken: '' })
-        })
+        });
+        
+        //create users
+        app.post('/users', async (req, res) => {
+            const user = req.body;
+            console.log(user);
+            const result = await usersCollection.insertOne(user);
+            res.send(result);
+        });
+
+        //get users
+        app.get('/users', async (req, res) => {
+            const query = {};
+            const users = await usersCollection.find(query).toArray();
+            res.send(users);
+        });
+
+
+        // get all seller 
+        app.get('/users/sellers', async(req, res)=>{
+            const query = {user: "Seller"}; 
+            const users = await usersCollection.find(query).toArray();
+            res.send(users);
+        });
+
+         // verify user
+         app.put('/users/admin/:email', verifyJWT, async(req, res)=>{
+            const decodedEmail = req.decoded.email;
+            const query = {email: decodedEmail};
+            const users = await usersCollection.findOne(query)
+
+            if(users?.user !== 'admin'){
+                return res.status(403).send({message: 'forbidden access'});
+            }
+            
+            const email = req.params.email;
+            const filter = {email: email};
+            const options ={ upsert: true};
+            const updatedDoc ={
+                $set:{
+                    isVerified: 'verified'
+                }
+            }
+            // const result2 = await productsCollection.updateMany(filter, updatedDoc,options);
+            const result = await usersCollection.updateOne(filter, updatedDoc,options);
+            res.send({result});
+          })
 
         // Reviews Collection
 
