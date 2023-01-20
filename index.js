@@ -51,7 +51,7 @@ async function run() {
             if (user) {
                 const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '1h' })
                 console.log(token)
-                console.log(user)
+                // console.log(user)
                 return res.send({ accessToken: token })
             }
             res.status(403).send({ accessToken: '' })
@@ -83,6 +83,7 @@ async function run() {
          // verify user
          app.put('/users/admin/:email', verifyJWT, async(req, res)=>{
             const decodedEmail = req.decoded.email;
+            // console.log(decodedEmail,"decoded email")
             const query = {email: decodedEmail};
             const users = await usersCollection.findOne(query)
 
