@@ -54,11 +54,11 @@ async function run() {
             }
             res.status(403).send({ accessToken: '' })
         });
-        
+
         //create users
         app.post('/users', async (req, res) => {
             const user = req.body;
-            console.log(user);
+            // console.log(user);
             const result = await usersCollection.insertOne(user);
             res.send(result);
         });
@@ -99,7 +99,7 @@ async function run() {
             // const result2 = await productsCollection.updateMany(filter, updatedDoc,options);
             const result = await usersCollection.updateOne(filter, updatedDoc,options);
             res.send({result});
-          })
+          });
 
 
     }
