@@ -51,16 +51,16 @@ async function run() {
             if (user) {
                 const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '1h' })
                 console.log(token)
-                console.log(user)
+                // console.log(user)
                 return res.send({ accessToken: token })
             }
             res.status(403).send({ accessToken: '' })
         });
-        
+
         //create users
         app.post('/users', async (req, res) => {
             const user = req.body;
-            console.log(user);
+            // console.log(user);
             const result = await usersCollection.insertOne(user);
             res.send(result);
         });
@@ -76,8 +76,8 @@ async function run() {
         // get all seller 
         app.get('/users/sellers', async(req, res)=>{
             const query = {user: "Seller"}; 
-            const users = await usersCollection.find(query).toArray();
-            res.send(users);
+            const result = await usersCollection.find(query).toArray();
+            res.send(result);
         });
 
          // verify user
@@ -101,7 +101,7 @@ async function run() {
             // const result2 = await productsCollection.updateMany(filter, updatedDoc,options);
             const result = await usersCollection.updateOne(filter, updatedDoc,options);
             res.send({result});
-          })
+          });
 
         // Reviews Collection
 
