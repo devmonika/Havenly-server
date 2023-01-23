@@ -39,6 +39,7 @@ async function run() {
     try {
         // Database Collections
         const usersCollection = client.db('havenlyDB').collection('users');
+        const categoriesCollection = client.db('havenlyDB').collection('categories');
         const reviewsCollection = client.db('havenlyDB').collection('reviews');
 
 
@@ -103,16 +104,23 @@ async function run() {
             res.send({result});
           });
 
-        // Reviews Collection
+        // Categories Collection
+            // get all the categories
+        app.get('/categories', async (req, res) => {
+            const query = {};
+            const categories = await categoriesCollection.find(query).toArray();
+            res.send(categories);
+        });
 
-        // get all the reviews
+        // Reviews Collection
+            // get all the reviews
         app.get('/reviews', async(req, res) => {
             const query = {};
             const reviews = await reviewsCollection.find(query).toArray();
             res.send(reviews);
         }); 
 
-        // post a review
+            // post a review
         app.post('/reviews', async(req, res) => {
             const review = req.body;
             const result = await reviewsCollection.insertOne(review);
