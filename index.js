@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const jwt = require('jsonwebtoken')
 require('dotenv').config();
@@ -18,16 +18,16 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@clu
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 console.log('database connected')
 
-function verifyJWT(req, res, next){
+function verifyJWT(req, res, next) {
     const authHeader = req.headers.authorization;
-    if(!authHeader){
+    if (!authHeader) {
         return res.status(401).send('unauthorized access');
     }
 
     const token = authHeader.split(' ')[1];
-    jwt.verify(token, process.env.ACCESS_TOKEN, function(err, decoded){
-        if(err){
-            return res.status(403).send({message:'forbidden access'})
+    jwt.verify(token, process.env.ACCESS_TOKEN, function (err, decoded) {
+        if (err) {
+            return res.status(403).send({ message: 'forbidden access' })
         }
         req.decoded = decoded;
         next();
@@ -75,53 +75,64 @@ async function run() {
 
 
         // get all seller 
-        app.get('/users/sellers', async(req, res)=>{
-            const query = {user: "Seller"}; 
+        app.get('/users/sellers', async (req, res) => {
+            const query = { user: "Seller" };
             const result = await usersCollection.find(query).toArray();
             res.send(result);
         });
 
-         // verify user
-         app.put('/users/admin/:email', verifyJWT, async(req, res)=>{
+        // verify user
+        app.put('/users/admin/:email', verifyJWT, async (req, res) => {
             const decodedEmail = req.decoded.email;
-            const query = {email: decodedEmail};
+            const query = { email: decodedEmail };
             const users = await usersCollection.findOne(query)
 
-            if(users?.user !== 'admin'){
-                return res.status(403).send({message: 'forbidden access'});
+            if (users?.user !== 'admin') {
+                return res.status(403).send({ message: 'forbidden access' });
             }
-            
+
             const email = req.params.email;
-            const filter = {email: email};
-            const options ={ upsert: true};
-            const updatedDoc ={
-                $set:{
+            const filter = { email: email };
+            const options = { upsert: true };
+            const updatedDoc = {
+                $set: {
                     isVerified: 'verified'
                 }
             }
             // const result2 = await productsCollection.updateMany(filter, updatedDoc,options);
-            const result = await usersCollection.updateOne(filter, updatedDoc,options);
-            res.send({result});
-          });
+            const result = await usersCollection.updateOne(filter, updatedDoc, options);
+            res.send({ result });
+        });
+
 
         // Categories Collection
-            // get all the categories
+        // get all the categories
         app.get('/categories', async (req, res) => {
             const query = {};
             const categories = await categoriesCollection.find(query).toArray();
             res.send(categories);
         });
 
+        //load categories by id
+        app.get('/categories/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) }
+            const result = await categoriesCollection.findOne(query);
+            res.send(result);
+        });
+
+
+
         // Reviews Collection
-            // get all the reviews
-        app.get('/reviews', async(req, res) => {
+        // get all the reviews
+        app.get('/reviews', async (req, res) => {
             const query = {};
             const reviews = await reviewsCollection.find(query).toArray();
             res.send(reviews);
-        }); 
+        });
 
-            // post a review
-        app.post('/reviews', async(req, res) => {
+        // post a review
+        app.post('/reviews', async (req, res) => {
             const review = req.body;
             const result = await reviewsCollection.insertOne(review);
             res.send(result);
