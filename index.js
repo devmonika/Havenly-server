@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const jwt = require('jsonwebtoken')
 require('dotenv').config();
@@ -43,6 +43,36 @@ async function run() {
         const reviewsCollection = client.db('havenlyDB').collection('reviews');
 
 
+
+        const verifyAdmin = async (req, res, next)=>{
+            const decodedEmail = req.decoded.email;
+            const query = {email: decodedEmail};
+            const user = await usersCollection.findOne(query);
+            if(user?.role !== 'admin'){
+                return res.status(403).send({message: 'forbidden access'})
+            }
+            next();
+        };
+        const verifyBuyer = async (req, res, next)=>{
+            const decodedEmail = req.decoded.email;
+            const query = {email: decodedEmail};
+            const user = await usersCollection.findOne(query);
+            if(user?.role !== 'buyer'){
+                return res.status(403).send({message: 'forbidden access'})
+            }
+            next();
+        };
+        const verifySeller = async (req, res, next)=>{
+            const decodedEmail = req.decoded.email;
+            const query = {email: decodedEmail};
+            const user = await usersCollection.findOne(query);
+            if(user?.role !== 'seller'){
+                return res.status(403).send({message: 'forbidden access'})
+            }
+            next();
+        };
+
+
         //get jwt
         app.get('/jwt', async (req, res) => {
             const email = req.query.email;
@@ -51,7 +81,7 @@ async function run() {
 
             if (user) {
                 const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '1h' })
-                console.log(token)
+                // console.log(token)
                 // console.log(user)
                 return res.send({ accessToken: token })
             }
@@ -76,20 +106,23 @@ async function run() {
 
         // get all seller 
         app.get('/users/sellers', async(req, res)=>{
-            const query = {user: "Seller"}; 
+            const query = {role: "Seller"}; 
             const result = await usersCollection.find(query).toArray();
             res.send(result);
         });
 
-         // verify user
+         // verify seller
          app.put('/users/admin/:email', verifyJWT, async(req, res)=>{
             const decodedEmail = req.decoded.email;
             const query = {email: decodedEmail};
             const users = await usersCollection.findOne(query)
 
-            if(users?.user !== 'admin'){
+            if(users?.role !== 'admin'){
                 return res.status(403).send({message: 'forbidden access'});
             }
+            // else if(users?.isVerified =='verified'){
+            //     return res.status(403).send({message: 'user already verified'});
+            // }
             
             const email = req.params.email;
             const filter = {email: email};
@@ -111,6 +144,21 @@ async function run() {
             const categories = await categoriesCollection.find(query).toArray();
             res.send(categories);
         });
+              // get all buyers
+        app.get('/users/buyers', async(req, res)=>{
+            const query = {role: "buyer"};
+            const result = await usersCollection.find(query).toArray();
+            res.send(result);
+        });
+        // delete a user
+        app.delete('/buyers/:id',verifyJWT, verifyAdmin, async(req, res)=>{
+            const id = req.params.id;
+            const filter = {_id: ObjectId(id)};
+            const result = await usersCollection.deleteOne(filter);
+            res.send(result);
+        })
+
+        // Reviews Collection
 
         // Reviews Collection
             // get all the reviews
