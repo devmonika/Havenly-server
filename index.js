@@ -41,6 +41,7 @@ async function run() {
         const usersCollection = client.db('havenlyDB').collection('users');
         const categoriesCollection = client.db('havenlyDB').collection('categories');
         const reviewsCollection = client.db('havenlyDB').collection('reviews');
+        const propertiesCollection = client.db('havenlyDB').collection('properties');
 
 
 
@@ -170,7 +171,13 @@ async function run() {
         });
 
 
-
+        // Properties Collection
+         app.post('/properties', async (req, res) => {
+            const property = req.body;
+            const result = await propertiesCollection.insertOne(property);
+            res.send(result);
+        });
+        
         // Reviews Collection
         // get all the reviews
         app.get('/reviews', async (req, res) => {
