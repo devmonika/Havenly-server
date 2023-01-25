@@ -87,8 +87,10 @@ async function run() {
             }
             res.status(403).send({ accessToken: '' })
         });
+        
 
-        //create users
+        //  All Users Collections
+        //create users 
         app.post('/users', async (req, res) => {
             const user = req.body;
             // console.log(user);
@@ -106,7 +108,7 @@ async function run() {
 
         // get all seller 
         app.get('/users/sellers', async(req, res)=>{
-            const query = {role: "Seller"}; 
+            const query = {role: "seller"}; 
             const result = await usersCollection.find(query).toArray();
             res.send(result);
         });
@@ -114,6 +116,7 @@ async function run() {
          // verify seller
          app.put('/users/admin/:email', verifyJWT, async(req, res)=>{
             const decodedEmail = req.decoded.email;
+            // console.log(decodedEmail)
             const query = { email: decodedEmail };
             const users = await usersCollection.findOne(query)
 
@@ -125,6 +128,7 @@ async function run() {
             // }
             
             const email = req.params.email;
+            // console.log(email)
             const filter = { email: email };
             const options = { upsert: true };
             const updatedDoc = {
@@ -137,6 +141,20 @@ async function run() {
             res.send({ result });
         });
 
+            // get all buyers
+            app.get('/users/buyers', async(req, res)=>{
+                const query = {role: "buyer"};
+                const result = await usersCollection.find(query).toArray();
+                res.send(result);
+            });
+            // delete a user
+            app.delete('/users/:id',verifyJWT, verifyAdmin, async(req, res)=>{
+                const id = req.params.id;
+                const filter = {_id: ObjectId(id)};
+                const result = await usersCollection.deleteOne(filter);
+                res.send(result);
+            })
+
 
         // Categories Collection
         // get all the categories
@@ -145,19 +163,6 @@ async function run() {
             const categories = await categoriesCollection.find(query).toArray();
             res.send(categories);
         });
-              // get all buyers
-        app.get('/users/buyers', async(req, res)=>{
-            const query = {role: "buyer"};
-            const result = await usersCollection.find(query).toArray();
-            res.send(result);
-        });
-        // delete a user
-        app.delete('/buyers/:id',verifyJWT, verifyAdmin, async(req, res)=>{
-            const id = req.params.id;
-            const filter = {_id: ObjectId(id)};
-            const result = await usersCollection.deleteOne(filter);
-            res.send(result);
-        })
 
         // Reviews Collection
 
