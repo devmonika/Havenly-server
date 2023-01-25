@@ -4,7 +4,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const jwt = require('jsonwebtoken')
 require('dotenv').config();
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 3001;
 
 //middleware
 app.use(cors());
@@ -41,6 +41,7 @@ async function run() {
         const usersCollection = client.db('havenlyDB').collection('users');
         const categoriesCollection = client.db('havenlyDB').collection('categories');
         const reviewsCollection = client.db('havenlyDB').collection('reviews');
+        const propertiesCollection = client.db('havenlyDB').collection('properties');
 
 
 
@@ -164,7 +165,7 @@ async function run() {
             res.send(categories);
         });
 
-        // Reviews Collection
+        
 
         //load categories by id
         app.get('/categories/:id', async (req, res) => {
@@ -175,7 +176,13 @@ async function run() {
         });
 
 
-
+        // Properties Collection
+         app.post('/properties', async (req, res) => {
+            const property = req.body;
+            const result = await propertiesCollection.insertOne(property);
+            res.send(result);
+        });
+        
         // Reviews Collection
         // get all the reviews
         app.get('/reviews', async (req, res) => {
@@ -191,6 +198,29 @@ async function run() {
             res.send(result);
         });
 
+        //get review by email for specific user
+        // app.get('/reviews', async(req, res) =>{
+        //     // console.log(req.query.email);
+        //     let query = {};
+        //     if(req.query.email){
+        //       query = {
+        //         reviewerEmail:req.query.email
+        //       }
+        //     }
+        //     const cursor = reviewsCollection.find(query);
+        //     const review = await cursor.toArray();
+        //     console.log(review);
+        //     res.send(review);
+        //   });
+
+
+          app.get('/review', async (req, res) => {
+            const email = req.query.email;
+            console.log(email)
+            const query = { reviewerEmail: email };      
+            const result = await reviewsCollection.find(query).toArray();
+            res.send(result);
+          });
     }
     finally {
 
@@ -201,8 +231,8 @@ run().catch(console.log);
 
 app.get('/', async (req, res) => {
     res.send('server running');
-})
+});
 
 app.listen(port, () => {
-    console.log(`server running on port ${port}`);
-})
+    console.log('server running on port');
+});
