@@ -91,6 +91,7 @@ async function run() {
         
 
         //  All Users Collections
+
         //create users 
         app.post('/users', async (req, res) => {
             const user = req.body;
@@ -148,7 +149,7 @@ async function run() {
                 const result = await usersCollection.find(query).toArray();
                 res.send(result);
             });
-            // delete a user
+            // delete a user with id
             app.delete('/users/:id',verifyJWT, verifyAdmin, async(req, res)=>{
                 const id = req.params.id;
                 const filter = {_id: ObjectId(id)};
