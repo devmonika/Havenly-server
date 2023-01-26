@@ -4,7 +4,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const jwt = require('jsonwebtoken')
 require('dotenv').config();
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 5000;
 
 //middleware
 app.use(cors());
@@ -216,6 +216,32 @@ async function run() {
             const result = await reviewsCollection.find(query).toArray();
             res.send(result);
           });
+
+          //edit and update user
+          app.patch('/reviews/:id', async(req, res) =>{
+            const id = req.params.id;
+            const reviews = req.body;
+            const query ={ _id:ObjectId(id)};
+            const updatedDoc ={
+              $set:{
+                reviews: reviews.reviews
+              
+              }
+              
+            }
+            console.log(reviews.reviews)
+            const result = await reviewsCollection.updateOne(query, updatedDoc);
+            res.send(result);
+          });
+          
+          //delete review
+          app.delete('/reviews/:id', async(req, res) =>{
+            const id = req.params.id;
+            const query ={ _id:ObjectId(id)};
+            const result = await reviewsCollection.deleteOne(query);
+            res.send(result);
+          });
+    
     }
     finally {
 
