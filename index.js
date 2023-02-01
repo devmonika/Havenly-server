@@ -45,30 +45,30 @@ async function run() {
 
 
 
-        const verifyAdmin = async (req, res, next)=>{
+        const verifyAdmin = async (req, res, next) => {
             const decodedEmail = req.decoded.email;
-            const query = {email: decodedEmail};
+            const query = { email: decodedEmail };
             const user = await usersCollection.findOne(query);
-            if(user?.role !== 'admin'){
-                return res.status(403).send({message: 'forbidden access'})
+            if (user?.role !== 'admin') {
+                return res.status(403).send({ message: 'forbidden access' })
             }
             next();
         };
-        const verifyBuyer = async (req, res, next)=>{
+        const verifyBuyer = async (req, res, next) => {
             const decodedEmail = req.decoded.email;
-            const query = {email: decodedEmail};
+            const query = { email: decodedEmail };
             const user = await usersCollection.findOne(query);
-            if(user?.role !== 'buyer'){
-                return res.status(403).send({message: 'forbidden access'})
+            if (user?.role !== 'buyer') {
+                return res.status(403).send({ message: 'forbidden access' })
             }
             next();
         };
-        const verifySeller = async (req, res, next)=>{
+        const verifySeller = async (req, res, next) => {
             const decodedEmail = req.decoded.email;
-            const query = {email: decodedEmail};
+            const query = { email: decodedEmail };
             const user = await usersCollection.findOne(query);
-            if(user?.role !== 'seller'){
-                return res.status(403).send({message: 'forbidden access'})
+            if (user?.role !== 'seller') {
+                return res.status(403).send({ message: 'forbidden access' })
             }
             next();
         };
@@ -88,7 +88,7 @@ async function run() {
             }
             res.status(403).send({ accessToken: '' })
         });
-        
+
 
         //  All Users Collections
 
@@ -107,28 +107,61 @@ async function run() {
             res.send(users);
         });
 
+        //load users by id
+        // app.get('/users/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     const query = { _id: ObjectId(id) }
+        //     const result = await usersCollection.findOne(query);
+        //     res.send(result);
+        // });
 
         // get all seller 
-        app.get('/users/sellers', async(req, res)=>{
-            const query = {role: "seller"}; 
+        app.get('/users/sellers', async (req, res) => {
+            const query = { role: "seller" };
             const result = await usersCollection.find(query).toArray();
             res.send(result);
         });
 
-         // verify seller
-         app.put('/users/admin/:email', verifyJWT, async(req, res)=>{
+
+        //update a user
+        // app.patch('users/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     const user = req.body;
+        //     const filter = { _id: ObjectId(id) };
+        //     const options = { upsert: true };
+        //     const updatedDoc = {
+        //         $set: user
+        //     };
+        //     const result = await usersCollection.updateOne(filter, updatedDoc, options);
+        //     res.send(result);
+        // });
+
+        //update user with email
+        // app.get('/users', async (req, res) => {
+        //     const email = req.query.email;
+        //     console.log(email);
+        //     const query = { email: email };
+        //     const result = await usersCollection.find(query).toArray();
+        //     res.send(result);
+        // });
+
+
+
+
+        // verify seller
+        app.put('/users/admin/:email', verifyJWT, async (req, res) => {
             const decodedEmail = req.decoded.email;
             // console.log(decodedEmail)
             const query = { email: decodedEmail };
             const users = await usersCollection.findOne(query)
 
-            if(users?.role !== 'admin'){
-                return res.status(403).send({message: 'forbidden access'});
+            if (users?.role !== 'admin') {
+                return res.status(403).send({ message: 'forbidden access' });
             }
             // else if(users?.isVerified =='verified'){
             //     return res.status(403).send({message: 'user already verified'});
             // }
-            
+
             const email = req.params.email;
             // console.log(email)
             const filter = { email: email };
@@ -143,19 +176,19 @@ async function run() {
             res.send({ result });
         });
 
-            // get all buyers
-            app.get('/users/buyers', async(req, res)=>{
-                const query = {role: "buyer"};
-                const result = await usersCollection.find(query).toArray();
-                res.send(result);
-            });
-            // delete a user with id
-            app.delete('/users/:id',verifyJWT, verifyAdmin, async(req, res)=>{
-                const id = req.params.id;
-                const filter = {_id: ObjectId(id)};
-                const result = await usersCollection.deleteOne(filter);
-                res.send(result);
-            })
+        // get all buyers
+        app.get('/users/buyers', async (req, res) => {
+            const query = { role: "buyer" };
+            const result = await usersCollection.find(query).toArray();
+            res.send(result);
+        });
+        // delete a user with id
+        app.delete('/users/:id', verifyJWT, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const result = await usersCollection.deleteOne(filter);
+            res.send(result);
+        })
 
 
         // Categories Collection
@@ -166,7 +199,7 @@ async function run() {
             res.send(categories);
         });
 
-        
+
 
         //load categories by id
         app.get('/categories/:id', async (req, res) => {
@@ -178,12 +211,12 @@ async function run() {
 
 
         // Properties Collection
-         app.post('/properties', async (req, res) => {
+        app.post('/properties', async (req, res) => {
             const property = req.body;
             const result = await propertiesCollection.insertOne(property);
             res.send(result);
         });
-        
+
         // Reviews Collection
         // get all the reviews
         app.get('/reviews', async (req, res) => {
@@ -215,39 +248,39 @@ async function run() {
         //   });
 
 
-          app.get('/review', async (req, res) => {
+        app.get('/review', async (req, res) => {
             const email = req.query.email;
             console.log(email)
-            const query = { reviewerEmail: email };      
+            const query = { reviewerEmail: email };
             const result = await reviewsCollection.find(query).toArray();
             res.send(result);
-          });
+        });
 
-          //edit and update user
-          app.patch('/reviews/:id', async(req, res) =>{
+        //edit and update user
+        app.patch('/reviews/:id', async (req, res) => {
             const id = req.params.id;
             const reviews = req.body;
-            const query ={ _id:ObjectId(id)};
-            const updatedDoc ={
-              $set:{
-                reviews: reviews.reviews
-              
-              }
-              
+            const query = { _id: ObjectId(id) };
+            const updatedDoc = {
+                $set: {
+                    reviews: reviews.reviews
+
+                }
+
             }
             console.log(reviews.reviews)
             const result = await reviewsCollection.updateOne(query, updatedDoc);
             res.send(result);
-          });
-          
-          //delete review
-          app.delete('/reviews/:id', async(req, res) =>{
+        });
+
+        //delete review
+        app.delete('/reviews/:id', async (req, res) => {
             const id = req.params.id;
-            const query ={ _id:ObjectId(id)};
+            const query = { _id: ObjectId(id) };
             const result = await reviewsCollection.deleteOne(query);
             res.send(result);
-          });
-    
+        });
+
     }
     finally {
 
