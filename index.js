@@ -183,7 +183,22 @@ async function run() {
             const result = await propertiesCollection.insertOne(property);
             res.send(result);
         });
+        // Get all properties
+        app.get('/properties', async(req, res)=>{
+            const query = {};
+            const result = await propertiesCollection.find(query).toArray();
+            res.send(result);
+        })
         
+          // get single property 
+          app.get('/properties/:id', async(req, res)=>{
+            const id = req.params.id;
+            const query = {_id: ObjectId(id)};
+            const result = await propertiesCollection.findOne(query);
+            res.send(result);
+        })
+
+
         // Reviews Collection
         // get all the reviews
         app.get('/reviews', async (req, res) => {
@@ -269,5 +284,5 @@ app.get('/', async (req, res) => {
 });
 
 app.listen(port, () => {
-    console.log('server running on port');
+    console.log(`server running on port: ${port}`);
 });
