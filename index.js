@@ -199,7 +199,7 @@ async function run() {
             res.send(result);
         });
 
-        //get review by email for specific user
+       
         // app.get('/reviews', async(req, res) =>{
         //     // console.log(req.query.email);
         //     let query = {};
@@ -214,7 +214,7 @@ async function run() {
         //     res.send(review);
         //   });
 
-
+         //get review by email for specific user
           app.get('/review', async (req, res) => {
             const email = req.query.email;
             console.log(email)
@@ -248,6 +248,14 @@ async function run() {
             res.send(result);
           });
     
+          //get user info for profile page
+          app.get('/user', async (req, res) => {
+            const email = req.query.email;
+            console.log(email)
+            const query = { email: email };      
+            const result = await usersCollection.find(query).toArray();
+            res.send(result);
+          });
     }
     finally {
 
