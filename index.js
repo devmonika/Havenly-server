@@ -246,6 +246,8 @@ async function run() {
             }
         });
 
+        
+
         // Reviews Collection
         // get all the reviews
         app.get('/reviews', async (req, res) => {
