@@ -42,6 +42,7 @@ async function run() {
         const categoriesCollection = client.db('havenlyDB').collection('categories');
         const reviewsCollection = client.db('havenlyDB').collection('reviews');
         const propertiesCollection = client.db('havenlyDB').collection('properties');
+        const wishListsCollection = client.db('havenlyDB').collection('wishlist');
 
 
 
@@ -196,7 +197,7 @@ async function run() {
             const result = await propertiesCollection.deleteOne(filter);
             res.send(result);
         });
-        
+
         //* add property
         app.post('/properties', async (req, res) => {
             const property = req.body;
@@ -204,16 +205,16 @@ async function run() {
             res.send(result);
         });
         // Get all properties
-        app.get('/properties', async(req, res)=>{
+        app.get('/properties', async (req, res) => {
             const query = {};
             const result = await propertiesCollection.find(query).toArray();
             res.send(result);
         })
-        
-          // get single property 
-          app.get('/properties/:id', async(req, res)=>{
+
+        // get single property 
+        app.get('/properties/:id', async (req, res) => {
             const id = req.params.id;
-            const query = {_id: ObjectId(id)};
+            const query = { _id: ObjectId(id) };
             const result = await propertiesCollection.findOne(query);
             res.send(result);
         })
@@ -246,6 +247,51 @@ async function run() {
             }
         });
 
+        // wishList collection 
+
+        // *get wishlist for a specific user
+        app.get('/wishlist', async (req, res) => {
+            const email = req.query.email;
+            // const decodedEmail = req.decoded.email;
+
+            // if (email !== decodedEmail) {
+            //     res.status(403).send({ message: 'Forbidden Access' });
+            // }
+
+            const query = { email: email };
+            const wishlist = await wishListsCollection.find(query).toArray();
+            res.send(wishlist);
+        });
+
+        // * add property to wishlist
+        app.post('/wishlist', verifyJWT, async (req, res) => {
+            const wishlist = req.body;
+            const query = {
+                address: wishlist.address,
+                email: wishlist.email,
+                userName: wishlist.userName
+            }
+
+            const wishlisted = await wishListsCollection.find(query).toArray();
+
+            if (wishlisted.length) {
+                const message = `${wishlist.productName} is already added to wishlist`;
+                return res.send({ acknowledged: false, message });
+            }
+
+            const result = await wishListsCollection.insertOne(wishlist);
+            res.send(result);
+        });
+
+        // * delete an item from wishlist
+
+        app.delete('/wishlist/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const result = await wishListsCollection.deleteOne(filter);
+            res.send(result);
+        })
+
         // Reviews Collection
         // get all the reviews
         app.get('/reviews', async (req, res) => {
@@ -261,7 +307,7 @@ async function run() {
             res.send(result);
         });
 
-       
+
         // app.get('/reviews', async(req, res) =>{
         //     // console.log(req.query.email);
         //     let query = {};
@@ -276,8 +322,8 @@ async function run() {
         //     res.send(review);
         //   });
 
-         //get review by email for specific user
-          app.get('/review', async (req, res) => {
+        //get review by email for specific user
+        app.get('/review', async (req, res) => {
             const email = req.query.email;
             console.log(email)
             const query = { reviewerEmail: email };
@@ -308,16 +354,16 @@ async function run() {
             const query = { _id: ObjectId(id) };
             const result = await reviewsCollection.deleteOne(query);
             res.send(result);
-          });
-    
-          //get user info for profile page
-          app.get('/user', async (req, res) => {
+        });
+
+        //get user info for profile page
+        app.get('/user', async (req, res) => {
             const email = req.query.email;
             console.log(email)
-            const query = { email: email };      
+            const query = { email: email };
             const result = await usersCollection.find(query).toArray();
             res.send(result);
-          });
+        });
     }
     finally {
 
