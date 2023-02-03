@@ -222,30 +222,61 @@ async function run() {
 
         //* category wise product load
 
+        // app.get('/properties/property/:category', async (req, res) => {
+        //     const category = req.params.category;
+        //     const query = { category: category };
+        //     if (category === "Residential") {
+        //         const cate = await propertiesCollection.find(query).toArray();
+        //         res.send(cate);
+        //     }
+        //     else if (category === "Luxury") {
+        //         const cate = await propertiesCollection.find(query).toArray();
+        //         res.send(cate);
+        //     }
+        //     else if (category === "Commercial") {
+        //         const cate = await propertiesCollection.find(query).toArray();
+        //         res.send(cate);
+        //     }
+        //     else if (category === "Affordable Housing") {
+        //         const cate = await propertiesCollection.find(query).toArray();
+        //         res.send(cate);
+        //     }
+        //     else {
+        //         const cate = await propertiesCollection.find({}).toArray();
+        //         res.send(cate);
+        //     }
+        // });
+
+        // app.get('/properties/property/:category', async (req, res) => {
+        //     const category = req.params.category;
+        //     const query = { category: category };
+
+        //     const validCategories = ["Residential", "Luxury", "Commercial", "Affordable Housing"];
+
+        //     if (!validCategories.includes(category)) {
+        //         return res.status(400).send({
+        //             error: 'Invalid category name'
+        //         });
+        //     }
+
+        //     const cate = await propertiesCollection.find(query).toArray();
+        //     res.send(cate);
+        // });
+
         app.get('/properties/property/:category', async (req, res) => {
             const category = req.params.category;
             const query = { category: category };
-            if (category === "Residential") {
-                const cate = await propertiesCollection.find(query).toArray();
-                res.send(cate);
+            let cate = [];
+
+            if (category !== "All") {
+                cate = await propertiesCollection.find(query).toArray();
+            } else {
+                cate = await propertiesCollection.find({}).toArray();
             }
-            else if (category === "Luxury") {
-                const cate = await propertiesCollection.find(query).toArray();
-                res.send(cate);
-            }
-            else if (category === "Commercial") {
-                const cate = await propertiesCollection.find(query).toArray();
-                res.send(cate);
-            }
-            else if (category === "Affordable Housing") {
-                const cate = await propertiesCollection.find(query).toArray();
-                res.send(cate);
-            }
-            else {
-                const cate = await propertiesCollection.find({}).toArray();
-                res.send(cate);
-            }
+
+            res.send(cate);
         });
+
 
         // wishList collection 
 
