@@ -177,7 +177,7 @@ async function run() {
         });
 
 
-        // Properties Collection
+        // all Properties Collection
          app.post('/properties', async (req, res) => {
             const property = req.body;
             const result = await propertiesCollection.insertOne(property);
@@ -196,7 +196,7 @@ async function run() {
             const query = {_id: ObjectId(id)};
             const result = await propertiesCollection.findOne(query);
             res.send(result);
-        })
+        });
 
 
         // Reviews Collection
