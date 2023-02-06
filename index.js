@@ -39,6 +39,7 @@ async function run() {
     try {
         // Database Collections
         const usersCollection = client.db('havenlyDB').collection('users');
+        const GoogleusersCollection = client.db('havenlyDB').collection('GoogleSignUp');
         const categoriesCollection = client.db('havenlyDB').collection('categories');
         const reviewsCollection = client.db('havenlyDB').collection('reviews');
         const propertiesCollection = client.db('havenlyDB').collection('properties');
@@ -96,7 +97,6 @@ async function run() {
         //create users 
         app.post('/users', async (req, res) => {
             const user = req.body;
-            // console.log(user);
             const result = await usersCollection.insertOne(user);
             res.send(result);
         });
@@ -108,6 +108,30 @@ async function run() {
             res.send(users);
         });
 
+        //create Googlesignup users
+        app.post('/signup', async (req, res) => {
+            const googleSignUpUser = req.body;
+            // console.log(googleSignUpUser)
+            const result = await GoogleusersCollection.insertOne(googleSignUpUser);
+            res.send(result);
+
+        });
+        //get Googlesignup users
+        app.get('/signup', async (req, res) => {
+            const query = {};
+            const users = await GoogleusersCollection.find(query).toArray();
+            res.send(users);
+        });
+
+
+
+        //load users by id
+        // app.get('/users/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     const query = { _id: ObjectId(id) }
+        //     const result = await usersCollection.findOne(query);
+        //     res.send(result);
+        // });
 
         // get all seller 
         app.get('/users/sellers', async (req, res) => {
@@ -115,6 +139,32 @@ async function run() {
             const result = await usersCollection.find(query).toArray();
             res.send(result);
         });
+
+
+        //update a user
+        // app.patch('users/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     const user = req.body;
+        //     const filter = { _id: ObjectId(id) };
+        //     const options = { upsert: true };
+        //     const updatedDoc = {
+        //         $set: user
+        //     };
+        //     const result = await usersCollection.updateOne(filter, updatedDoc, options);
+        //     res.send(result);
+        // });
+
+        //update user with email
+        // app.get('/users', async (req, res) => {
+        //     const email = req.query.email;
+        //     console.log(email);
+        //     const query = { email: email };
+        //     const result = await usersCollection.find(query).toArray();
+        //     res.send(result);
+        // });
+
+
+
 
         // verify seller
         app.put('/users/admin/:email', verifyJWT, async (req, res) => {
@@ -178,6 +228,10 @@ async function run() {
         });
 
 
+
+
+
+
         // Properties Collection
 
         // get seller properties for the route my properties
@@ -216,6 +270,60 @@ async function run() {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
             const result = await propertiesCollection.findOne(query);
+            res.send(result);
+        });
+
+        // app.get('/categories/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     const query = { _id: ObjectId(id) }
+        //     const category = await propertiesCollection.filter(c => c._id === query);
+        //     res.send(category);
+        // });
+
+
+
+
+        //individual categorywise data load
+        app.get('/properties/property/:category', async (req, res) => {
+            const category = req.params.category;
+            const query = { category: category };
+            if (category === "Residential") {
+                const cate = await propertiesCollection.find(query).toArray();
+                res.send(cate);
+            }
+            else if (category === "Luxury") {
+                const cate = await propertiesCollection.find(query).toArray();
+                res.send(cate);
+            }
+            else if (category === "Commercial") {
+                const cate = await propertiesCollection.find(query).toArray();
+                res.send(cate);
+            }
+            else if (category === "Affordable Housing") {
+                const cate = await propertiesCollection.find(query).toArray();
+                res.send(cate);
+            }
+            else {
+                const cate = await propertiesCollection.find({}).toArray();
+                res.send(cate);
+            }
+        });
+
+
+
+        // app.get('/category', async (req, res) => {
+        //     const query = {};
+        //     const category = await propertiesCollection
+        //         .find(query)
+        //         .sort({ category: 1 })
+        //         .toArray();
+        //     res.send(category);
+        // });
+
+        app.get('/properties/:category', async (req, res) => {
+            const category = req.params.category;
+            const query = { category: category };
+            const result = await propertiesCollection.find(query).toArray();
             res.send(result);
         })
 
