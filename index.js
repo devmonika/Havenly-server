@@ -135,6 +135,32 @@ async function run() {
             res.send(result);
         });
 
+
+        //update a user
+        // app.patch('users/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     const user = req.body;
+        //     const filter = { _id: ObjectId(id) };
+        //     const options = { upsert: true };
+        //     const updatedDoc = {
+        //         $set: user
+        //     };
+        //     const result = await usersCollection.updateOne(filter, updatedDoc, options);
+        //     res.send(result);
+        // });
+
+        //update user with email
+        // app.get('/users', async (req, res) => {
+        //     const email = req.query.email;
+        //     console.log(email);
+        //     const query = { email: email };
+        //     const result = await usersCollection.find(query).toArray();
+        //     res.send(result);
+        // });
+
+
+
+
         // verify seller
         app.put('/users/admin/:email', verifyJWT, async (req, res) => {
             const decodedEmail = req.decoded.email;
@@ -430,6 +456,9 @@ async function run() {
             const result = await reportCollection.findOne(query);
             res.send(result);
         });
+        app.get('/',async(req,res)=>{
+            
+        })
 
 
         // app.get('/reviews', async(req, res) =>{
