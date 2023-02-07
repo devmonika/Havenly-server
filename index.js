@@ -43,6 +43,8 @@ async function run() {
         const categoriesCollection = client.db('havenlyDB').collection('categories');
         const reviewsCollection = client.db('havenlyDB').collection('reviews');
         const propertiesCollection = client.db('havenlyDB').collection('properties');
+        const wishListsCollection = client.db('havenlyDB').collection('wishlist');
+        const reportCollection = client.db('havenlyDB').collection('report');
 
 
 
@@ -124,13 +126,7 @@ async function run() {
 
 
 
-        //load users by id
-        // app.get('/users/:id', async (req, res) => {
-        //     const id = req.params.id;
-        //     const query = { _id: ObjectId(id) }
-        //     const result = await usersCollection.findOne(query);
-        //     res.send(result);
-        // });
+
 
         // get all seller 
         app.get('/users/sellers', async (req, res) => {
@@ -138,32 +134,6 @@ async function run() {
             const result = await usersCollection.find(query).toArray();
             res.send(result);
         });
-
-
-        //update a user
-        // app.patch('users/:id', async (req, res) => {
-        //     const id = req.params.id;
-        //     const user = req.body;
-        //     const filter = { _id: ObjectId(id) };
-        //     const options = { upsert: true };
-        //     const updatedDoc = {
-        //         $set: user
-        //     };
-        //     const result = await usersCollection.updateOne(filter, updatedDoc, options);
-        //     res.send(result);
-        // });
-
-        //update user with email
-        // app.get('/users', async (req, res) => {
-        //     const email = req.query.email;
-        //     console.log(email);
-        //     const query = { email: email };
-        //     const result = await usersCollection.find(query).toArray();
-        //     res.send(result);
-        // });
-
-
-
 
         // verify seller
         app.put('/users/admin/:email', verifyJWT, async (req, res) => {
@@ -232,6 +202,26 @@ async function run() {
 
 
         // Properties Collection
+
+        // get seller properties for the route my properties
+
+        app.get('/properties/myproperty', async (req, res) => {
+            const seller_email = req.query.email;
+            const query = { seller_email };
+            const property = await propertiesCollection.find(query).toArray();
+            res.send(property);
+        });
+
+        // * delete seller property
+
+        app.delete('/property/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const result = await propertiesCollection.deleteOne(filter);
+            res.send(result);
+        });
+
+        //* add property
         app.post('/properties', async (req, res) => {
             const property = req.body;
             const result = await propertiesCollection.insertOne(property);
@@ -290,14 +280,7 @@ async function run() {
 
 
 
-        // app.get('/category', async (req, res) => {
-        //     const query = {};
-        //     const category = await propertiesCollection
-        //         .find(query)
-        //         .sort({ category: 1 })
-        //         .toArray();
-        //     res.send(category);
-        // });
+
 
         app.get('/properties/:category', async (req, res) => {
             const category = req.params.category;
@@ -306,6 +289,109 @@ async function run() {
             res.send(result);
         })
 
+
+        //* category wise product load
+
+        // app.get('/properties/property/:category', async (req, res) => {
+        //     const category = req.params.category;
+        //     const query = { category: category };
+        //     if (category === "Residential") {
+        //         const cate = await propertiesCollection.find(query).toArray();
+        //         res.send(cate);
+        //     }
+        //     else if (category === "Luxury") {
+        //         const cate = await propertiesCollection.find(query).toArray();
+        //         res.send(cate);
+        //     }
+        //     else if (category === "Commercial") {
+        //         const cate = await propertiesCollection.find(query).toArray();
+        //         res.send(cate);
+        //     }
+        //     else if (category === "Affordable Housing") {
+        //         const cate = await propertiesCollection.find(query).toArray();
+        //         res.send(cate);
+        //     }
+        //     else {
+        //         const cate = await propertiesCollection.find({}).toArray();
+        //         res.send(cate);
+        //     }
+        // });
+
+        // app.get('/properties/property/:category', async (req, res) => {
+        //     const category = req.params.category;
+        //     const query = { category: category };
+
+        //     const validCategories = ["Residential", "Luxury", "Commercial", "Affordable Housing"];
+
+        //     if (!validCategories.includes(category)) {
+        //         return res.status(400).send({
+        //             error: 'Invalid category name'
+        //         });
+        //     }
+
+        //     const cate = await propertiesCollection.find(query).toArray();
+        //     res.send(cate);
+        // });
+
+        app.get('/properties/property/:category', async (req, res) => {
+            const category = req.params.category;
+            const query = { category: category };
+            let cate = [];
+
+            if (category !== "All") {
+                cate = await propertiesCollection.find(query).toArray();
+            } else {
+                cate = await propertiesCollection.find({}).toArray();
+            }
+
+            res.send(cate);
+        });
+
+
+        // wishList collection 
+
+        // *get wishlist for a specific user
+        app.get('/wishlist', async (req, res) => {
+            const email = req.query.email;
+            // const decodedEmail = req.decoded.email;
+
+            // if (email !== decodedEmail) {
+            //     res.status(403).send({ message: 'Forbidden Access' });
+            // }
+
+            const query = { email: email };
+            const wishlist = await wishListsCollection.find(query).toArray();
+            res.send(wishlist);
+        });
+
+        // * add property to wishlist
+        app.post('/wishlist', verifyJWT, async (req, res) => {
+            const wishlist = req.body;
+            const query = {
+                address: wishlist.address,
+                email: wishlist.email,
+                userName: wishlist.userName
+            }
+
+            const wishlisted = await wishListsCollection.find(query).toArray();
+
+            if (wishlisted.length) {
+                const message = `${wishlist.productName} is already added to wishlist`;
+                return res.send({ acknowledged: false, message });
+            }
+
+            const result = await wishListsCollection.insertOne(wishlist);
+            res.send(result);
+        });
+
+        // * delete an item from wishlist
+
+        app.delete('/wishlist/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const result = await wishListsCollection.deleteOne(filter);
+            res.send(result);
+        })
 
         // Reviews Collection
         // get all the reviews
@@ -322,7 +408,30 @@ async function run() {
             res.send(result);
         });
 
-        //get review by email for specific user
+
+        //post report
+        app.post('/report', async (req, res) => {
+            const reportData = req.body;
+            const result = await reportCollection.insertOne(reportData);
+            res.send(result);
+        });
+
+        // get all the report
+        app.get('/report', async (req, res) => {
+            const query = {};
+            const report = await reportCollection.find(query).toArray();
+            res.send(report);
+        });
+
+        // get single report 
+        app.get('/report/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await reportCollection.findOne(query);
+            res.send(result);
+        });
+
+
         // app.get('/reviews', async(req, res) =>{
         //     // console.log(req.query.email);
         //     let query = {};
@@ -337,7 +446,7 @@ async function run() {
         //     res.send(review);
         //   });
 
-
+        //get review by email for specific user
         app.get('/review', async (req, res) => {
             const email = req.query.email;
             console.log(email)
@@ -371,6 +480,14 @@ async function run() {
             res.send(result);
         });
 
+        //get user info for profile page
+        app.get('/user', async (req, res) => {
+            const email = req.query.email;
+            console.log(email)
+            const query = { email: email };
+            const result = await usersCollection.find(query).toArray();
+            res.send(result);
+        });
     }
     finally {
 
