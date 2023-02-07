@@ -84,7 +84,7 @@ async function run() {
             const user = await usersCollection.findOne(query);
 
             if (user) {
-                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '1h' })
+                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '7d' })
                 // console.log(token)
                 // console.log(user)
                 return res.send({ accessToken: token })
@@ -402,13 +402,37 @@ async function run() {
             const wishlisted = await wishListsCollection.find(query).toArray();
 
             if (wishlisted.length) {
-                const message = `${wishlist.productName} is already added to wishlist`;
+                const message = `${wishlist.address} is already added to wishlist`;
                 return res.send({ acknowledged: false, message });
             }
 
             const result = await wishListsCollection.insertOne(wishlist);
             res.send(result);
         });
+
+        // // * updated added button
+
+        // app.patch('/wishlist', verifyJWT, async (req, res) => {
+        //     const wishlist = req.body;
+        //     const query = {
+        //         address: wishlist.address,
+        //         email: wishlist.email,
+        //         userName: wishlist.userName,
+        //     };
+
+        //     const options = { upsert: true };
+        //     const updatedDoc = {
+        //         $set: { added: wishlist.added }
+        //     }
+
+        //     const result = await wishListsCollection.updateOne(
+        //         query,
+        //         options,
+        //         updatedDoc
+        //     );
+
+        //     res.send(result);
+        // });
 
         // * delete an item from wishlist
 
