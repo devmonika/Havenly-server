@@ -44,6 +44,7 @@ async function run() {
         const reviewsCollection = client.db('havenlyDB').collection('reviews');
         const propertiesCollection = client.db('havenlyDB').collection('properties');
         const wishListsCollection = client.db('havenlyDB').collection('wishlist');
+        const reportCollection = client.db('havenlyDB').collection('report');
 
 
 
@@ -125,13 +126,7 @@ async function run() {
 
 
 
-        //load users by id
-        // app.get('/users/:id', async (req, res) => {
-        //     const id = req.params.id;
-        //     const query = { _id: ObjectId(id) }
-        //     const result = await usersCollection.findOne(query);
-        //     res.send(result);
-        // });
+
 
         // get all seller 
         app.get('/users/sellers', async (req, res) => {
@@ -311,14 +306,7 @@ async function run() {
 
 
 
-        // app.get('/category', async (req, res) => {
-        //     const query = {};
-        //     const category = await propertiesCollection
-        //         .find(query)
-        //         .sort({ category: 1 })
-        //         .toArray();
-        //     res.send(category);
-        // });
+
 
         app.get('/properties/:category', async (req, res) => {
             const category = req.params.category;
@@ -445,6 +433,32 @@ async function run() {
             const result = await reviewsCollection.insertOne(review);
             res.send(result);
         });
+
+
+        //post report
+        app.post('/report', async (req, res) => {
+            const reportData = req.body;
+            const result = await reportCollection.insertOne(reportData);
+            res.send(result);
+        });
+
+        // get all the report
+        app.get('/report', async (req, res) => {
+            const query = {};
+            const report = await reportCollection.find(query).toArray();
+            res.send(report);
+        });
+
+        // get single report 
+        app.get('/report/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await reportCollection.findOne(query);
+            res.send(result);
+        });
+        app.get('/',async(req,res)=>{
+            
+        })
 
 
         // app.get('/reviews', async(req, res) =>{
