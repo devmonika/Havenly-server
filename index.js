@@ -42,11 +42,13 @@ async function run() {
     try {
         // Database Collections
         const usersCollection = client.db('havenlyDB').collection('users');
+        const GoogleusersCollection = client.db('havenlyDB').collection('GoogleSignUp');
         const categoriesCollection = client.db('havenlyDB').collection('categories');
         const reviewsCollection = client.db('havenlyDB').collection('reviews');
         const propertiesCollection = client.db('havenlyDB').collection('properties');
         const wishListsCollection = client.db('havenlyDB').collection('wishlist');
         const paymentsCollection = client.db('havenlyDB').collection('payments');
+        const reportCollection = client.db('havenlyDB').collection('report');
 
 
 
@@ -86,7 +88,7 @@ async function run() {
             const user = await usersCollection.findOne(query);
 
             if (user) {
-                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '1h' })
+                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '7d' })
                 // console.log(token)
                 // console.log(user)
                 return res.send({ accessToken: token })
@@ -134,7 +136,6 @@ async function run() {
         //create users 
         app.post('/users', async (req, res) => {
             const user = req.body;
-            // console.log(user);
             const result = await usersCollection.insertOne(user);
             res.send(result);
         });
@@ -146,6 +147,24 @@ async function run() {
             res.send(users);
         });
 
+        //create Googlesignup users
+        app.post('/signup', async (req, res) => {
+            const googleSignUpUser = req.body;
+            // console.log(googleSignUpUser)
+            const result = await GoogleusersCollection.insertOne(googleSignUpUser);
+            res.send(result);
+
+        });
+        //get Googlesignup users
+        app.get('/signup', async (req, res) => {
+            const query = {};
+            const users = await GoogleusersCollection.find(query).toArray();
+            res.send(users);
+        });
+
+
+
+
 
         // get all seller 
         app.get('/users/sellers', async (req, res) => {
@@ -153,6 +172,32 @@ async function run() {
             const result = await usersCollection.find(query).toArray();
             res.send(result);
         });
+
+
+        //update a user
+        // app.patch('users/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     const user = req.body;
+        //     const filter = { _id: ObjectId(id) };
+        //     const options = { upsert: true };
+        //     const updatedDoc = {
+        //         $set: user
+        //     };
+        //     const result = await usersCollection.updateOne(filter, updatedDoc, options);
+        //     res.send(result);
+        // });
+
+        //update user with email
+        // app.get('/users', async (req, res) => {
+        //     const email = req.query.email;
+        //     console.log(email);
+        //     const query = { email: email };
+        //     const result = await usersCollection.find(query).toArray();
+        //     res.send(result);
+        // });
+
+
+
 
         // verify seller
         app.put('/users/admin/:email', verifyJWT, async (req, res) => {
@@ -216,8 +261,8 @@ async function run() {
         });
 
 
-        // all Properties Collection
-        //  app.post('/properties', async (req, res) => {
+
+
         // Properties Collection
 
         // get seller properties for the route my properties
@@ -258,6 +303,53 @@ async function run() {
             const result = await propertiesCollection.findOne(query);
             res.send(result);
         });
+
+        // app.get('/categories/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     const query = { _id: ObjectId(id) }
+        //     const category = await propertiesCollection.filter(c => c._id === query);
+        //     res.send(category);
+        // });
+
+
+
+
+        //individual categorywise data load
+        app.get('/properties/property/:category', async (req, res) => {
+            const category = req.params.category;
+            const query = { category: category };
+            if (category === "Residential") {
+                const cate = await propertiesCollection.find(query).toArray();
+                res.send(cate);
+            }
+            else if (category === "Luxury") {
+                const cate = await propertiesCollection.find(query).toArray();
+                res.send(cate);
+            }
+            else if (category === "Commercial") {
+                const cate = await propertiesCollection.find(query).toArray();
+                res.send(cate);
+            }
+            else if (category === "Affordable Housing") {
+                const cate = await propertiesCollection.find(query).toArray();
+                res.send(cate);
+            }
+            else {
+                const cate = await propertiesCollection.find({}).toArray();
+                res.send(cate);
+            }
+        });
+
+
+
+
+
+        app.get('/properties/:category', async (req, res) => {
+            const category = req.params.category;
+            const query = { category: category };
+            const result = await propertiesCollection.find(query).toArray();
+            res.send(result);
+        })
 
 
         //* category wise product load
@@ -346,13 +438,37 @@ async function run() {
             const wishlisted = await wishListsCollection.find(query).toArray();
 
             if (wishlisted.length) {
-                const message = `${wishlist.productName} is already added to wishlist`;
+                const message = `${wishlist.address} is already added to wishlist`;
                 return res.send({ acknowledged: false, message });
             }
 
             const result = await wishListsCollection.insertOne(wishlist);
             res.send(result);
         });
+
+        // // * updated added button
+
+        // app.patch('/wishlist', verifyJWT, async (req, res) => {
+        //     const wishlist = req.body;
+        //     const query = {
+        //         address: wishlist.address,
+        //         email: wishlist.email,
+        //         userName: wishlist.userName,
+        //     };
+
+        //     const options = { upsert: true };
+        //     const updatedDoc = {
+        //         $set: { added: wishlist.added }
+        //     }
+
+        //     const result = await wishListsCollection.updateOne(
+        //         query,
+        //         options,
+        //         updatedDoc
+        //     );
+
+        //     res.send(result);
+        // });
 
         // * delete an item from wishlist
 
@@ -377,6 +493,32 @@ async function run() {
             const result = await reviewsCollection.insertOne(review);
             res.send(result);
         });
+
+
+        //post report
+        app.post('/report', async (req, res) => {
+            const reportData = req.body;
+            const result = await reportCollection.insertOne(reportData);
+            res.send(result);
+        });
+
+        // get all the report
+        app.get('/report', async (req, res) => {
+            const query = {};
+            const report = await reportCollection.find(query).toArray();
+            res.send(report);
+        });
+
+        // get single report 
+        app.get('/report/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await reportCollection.findOne(query);
+            res.send(result);
+        });
+        app.get('/',async(req,res)=>{
+            
+        })
 
 
         // app.get('/reviews', async(req, res) =>{
