@@ -593,20 +593,23 @@ async function run() {
             res.send(result);
         });
 
-        //edit and update user
+        //edit and update user review
         app.patch('/reviews/:id', async (req, res) => {
             const id = req.params.id;
             const reviews = req.body;
+             const ratings = req.body;
             const query = { _id: ObjectId(id) };
+              const options = {upsert:true}
             const updatedDoc = {
                 $set: {
-                    reviews: reviews.reviews
+                    reviews: reviews.reviews,
+                    ratings:ratings.ratings
 
                 }
 
             }
             console.log(reviews.reviews)
-            const result = await reviewsCollection.updateOne(query, updatedDoc);
+            const result = await reviewsCollection.updateOne(query, updatedDoc,options);
             res.send(result);
         });
 
@@ -640,4 +643,4 @@ app.get('/', async (req, res) => {
 
 app.listen(port, () => {
     console.log(`server running on port: ${port}`);
-});
+}); 
