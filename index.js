@@ -3,7 +3,12 @@ const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const jwt = require('jsonwebtoken')
+const nodemailer = require("nodemailer");
+const mg = require('nodemailer-mailgun-transport');
 require('dotenv').config();
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+
+
 const port = process.env.PORT || 5000;
 
 //middleware
@@ -17,6 +22,51 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@clu
 
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 console.log('database connected')
+
+function sendBookingEmail(payment){
+
+    const {buyer_email, category, city, date, price} = payment;
+
+    const auth = {
+        auth: {
+          api_key: process.env.EMAIL_SEND_KEY,
+          domain: process.env.EMAIL_SEND_DOMAIN
+        }
+      }
+      
+      const transporter = nodemailer.createTransport(mg(auth));
+
+    // let transporter = nodemailer.createTransport({
+    //     host: 'smtp.sendgrid.net',
+    //     port: 587,
+    //     auth: {
+    //         user: "apikey",
+    //         pass: process.env.SENDGRID_API_KEY
+    //     }
+    //  });
+
+     transporter.sendMail({
+        from: "webtitans59@gmail.com", // verified sender email
+        to: buyer_email || "webtitans59@gmail.com", // recipient email
+        subject: `Your booking ${category} apartment is confirmed`, // Subject line
+        text: "Hello Mr!", // plain text body
+        html: `<h3>Your booking is confirmed</h3>
+        <div>
+        <p>Booking Date ${date}</p>
+        <p>Price $${price} paid.</p>
+        <p>Apartment place ${city} </p>
+        <p>Thanks form Havenly.</p>
+        </div>`, // html body
+      }, function(error, info){
+        if (error) {
+          console.log(error);
+        } else {
+          console.log('Email sent: ' + info.response);
+        }
+      });
+     
+
+}
 
 function verifyJWT(req, res, next) {
     const authHeader = req.headers.authorization;
@@ -44,6 +94,7 @@ async function run() {
         const reviewsCollection = client.db('havenlyDB').collection('reviews');
         const propertiesCollection = client.db('havenlyDB').collection('properties');
         const wishListsCollection = client.db('havenlyDB').collection('wishlist');
+        const paymentsCollection = client.db('havenlyDB').collection('payments');
         const reportCollection = client.db('havenlyDB').collection('report');
 
 
@@ -84,13 +135,49 @@ async function run() {
             const user = await usersCollection.findOne(query);
 
             if (user) {
-                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '1h' })
+                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '7d' })
                 // console.log(token)
                 // console.log(user)
                 return res.send({ accessToken: token })
             }
             res.status(403).send({ accessToken: '' })
         });
+
+        // FOR PAYMENT 
+        app.post('/create-payment-intent', async(req, res) =>{
+            const booking = req.body;
+            const price = booking.price;
+            const amount = price * 100;
+
+            const paymentIntent = await stripe.paymentIntents.create({
+                currency: 'usd',
+                amount: amount,
+                "payment_method_types":[
+                    "card"
+                ]
+            });
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+            })
+        });
+
+        // store payments info 
+        app.post('/payments', async(req, res)=>{
+            const payment = req.body;
+            const result = await paymentsCollection.insertOne(payment);
+            const id = payment.booking_id;
+            const filter = {_id: ObjectId(id)}
+            const updatedDoc ={
+                $set:{
+                    paid: true,
+                    transactionId: payment.transactionId
+                }
+            }
+            const updateResult = await propertiesCollection.updateOne(filter, updatedDoc)
+            sendBookingEmail(payment);
+
+            res.send(result);
+        })
 
 
         //  All Users Collections
@@ -221,8 +308,6 @@ async function run() {
             const result = await categoriesCollection.findOne(query);
             res.send(result);
         });
-
-
 
 
 
@@ -404,13 +489,37 @@ async function run() {
             const wishlisted = await wishListsCollection.find(query).toArray();
 
             if (wishlisted.length) {
-                const message = `${wishlist.productName} is already added to wishlist`;
+                const message = `${wishlist.address} is already added to wishlist`;
                 return res.send({ acknowledged: false, message });
             }
 
             const result = await wishListsCollection.insertOne(wishlist);
             res.send(result);
         });
+
+        // // * updated added button
+
+        // app.patch('/wishlist', verifyJWT, async (req, res) => {
+        //     const wishlist = req.body;
+        //     const query = {
+        //         address: wishlist.address,
+        //         email: wishlist.email,
+        //         userName: wishlist.userName,
+        //     };
+
+        //     const options = { upsert: true };
+        //     const updatedDoc = {
+        //         $set: { added: wishlist.added }
+        //     }
+
+        //     const result = await wishListsCollection.updateOne(
+        //         query,
+        //         options,
+        //         updatedDoc
+        //     );
+
+        //     res.send(result);
+        // });
 
         // * delete an item from wishlist
 
@@ -486,20 +595,23 @@ async function run() {
             res.send(result);
         });
 
-        //edit and update user
+        //edit and update user review
         app.patch('/reviews/:id', async (req, res) => {
             const id = req.params.id;
             const reviews = req.body;
+             const ratings = req.body;
             const query = { _id: ObjectId(id) };
+              const options = {upsert:true}
             const updatedDoc = {
                 $set: {
-                    reviews: reviews.reviews
+                    reviews: reviews.reviews,
+                    ratings:ratings.ratings
 
                 }
 
             }
             console.log(reviews.reviews)
-            const result = await reviewsCollection.updateOne(query, updatedDoc);
+            const result = await reviewsCollection.updateOne(query, updatedDoc,options);
             res.send(result);
         });
 
@@ -533,4 +645,4 @@ app.get('/', async (req, res) => {
 
 app.listen(port, () => {
     console.log(`server running on port: ${port}`);
-});
+}); 
