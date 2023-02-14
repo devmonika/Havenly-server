@@ -20,6 +20,6 @@
     "nodemailer": "^6.9.1",
     "nodemailer-mailgun-transport": "^2.1.5",
     "nodemon": "^2.0.20",
-    "stripe": "^11.9.1"
+    "stripe": "^11.10.0"
   }
 }
