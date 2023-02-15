@@ -629,6 +629,48 @@ async function run() {
             const result = await usersCollection.find(query).toArray();
             res.send(result);
         });
+
+        // //get user info
+        // app.get('/user/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     const query = { _id: ObjectId(id) };
+        //     const result = await usersCollection.findOne(query);
+        //     res.send(result);
+        // });
+
+        //post about
+        app.post('/users', async (req, res) => {
+            const user = req.body;
+            const result = await usersCollection.insertOne(user);
+            res.send(result);
+            console.log("meeee")
+        });
+
+        //edit and update user info
+        app.patch('/user/:email',verifyJWT, async (req, res) => {
+          
+           
+            console.log("youuu")
+            const email = req.params.email;
+            const person = req.body;
+            //  const about = req.body;
+            const query = { email:email };
+              const options = {upsert:true}
+            const updatedDoc = {
+                $set: {
+                    name: person.name,
+                    about:person.about,
+                    image:person.image
+
+                }
+
+            }
+            
+            const result = await usersCollection.updateOne(query, updatedDoc,options);
+            res.send(result);
+            
+        });
+
     }
     finally {
 
