@@ -454,6 +454,7 @@ async function run() {
             } else {
                 cate = await propertiesCollection.find({}).toArray();
             }
+            const count = await propertiesCollection.estimatedDocumentCount();
 
             res.send(cate);
         });
