@@ -1,20 +1,18 @@
-const express = require('express');
-const cors = require('cors');
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const express = require("express");
+const cors = require("cors");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
-const jwt = require('jsonwebtoken')
+const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
-const mg = require('nodemailer-mailgun-transport');
-require('dotenv').config();
+const mg = require("nodemailer-mailgun-transport");
+require("dotenv").config();
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-
 
 const port = process.env.PORT || 5000;
 
 //middleware
 app.use(cors());
 app.use(express.json());
-
 
 // mongodb
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.gympzpz.mongodb.net/?retryWrites=true&w=majority`;
@@ -101,21 +99,20 @@ async function sendBookingEmail(payment){
 
 
 function verifyJWT(req, res, next) {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-        return res.status(401).send('unauthorized access');
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).send("unauthorized access");
+  }
+
+  const token = authHeader.split(" ")[1];
+  jwt.verify(token, process.env.ACCESS_TOKEN, function (err, decoded) {
+    if (err) {
+      return res.status(403).send({ message: "forbidden access" });
     }
-
-    const token = authHeader.split(' ')[1];
-    jwt.verify(token, process.env.ACCESS_TOKEN, function (err, decoded) {
-        if (err) {
-            return res.status(403).send({ message: 'forbidden access' })
-        }
-        req.decoded = decoded;
-        next();
-    })
+    req.decoded = decoded;
+    next();
+  });
 }
-
 
 async function run() {
     try {
@@ -130,51 +127,50 @@ async function run() {
         const addPromotePaymentsCollection = client.db('havenlyDB').collection('promotePayments');
         const reportCollection = client.db('havenlyDB').collection('report');
 
-
-
-        const verifyAdmin = async (req, res, next) => {
-            const decodedEmail = req.decoded.email;
-            const query = { email: decodedEmail };
-            const user = await usersCollection.findOne(query);
-            if (user?.role !== 'admin') {
-                return res.status(403).send({ message: 'forbidden access' })
-            }
-            next();
-        };
-        const verifyBuyer = async (req, res, next) => {
-            const decodedEmail = req.decoded.email;
-            const query = { email: decodedEmail };
-            const user = await usersCollection.findOne(query);
-            if (user?.role !== 'buyer') {
-                return res.status(403).send({ message: 'forbidden access' })
-            }
-            next();
-        };
-        const verifySeller = async (req, res, next) => {
-            const decodedEmail = req.decoded.email;
-            const query = { email: decodedEmail };
-            const user = await usersCollection.findOne(query);
-            if (user?.role !== 'seller') {
-                return res.status(403).send({ message: 'forbidden access' })
-            }
-            next();
-        };
-
+    const verifyAdmin = async (req, res, next) => {
+      const decodedEmail = req.decoded.email;
+      const query = { email: decodedEmail };
+      const user = await usersCollection.findOne(query);
+      if (user?.role !== "admin") {
+        return res.status(403).send({ message: "forbidden access" });
+      }
+      next();
+    };
+    const verifyBuyer = async (req, res, next) => {
+      const decodedEmail = req.decoded.email;
+      const query = { email: decodedEmail };
+      const user = await usersCollection.findOne(query);
+      if (user?.role !== "buyer") {
+        return res.status(403).send({ message: "forbidden access" });
+      }
+      next();
+    };
+    const verifySeller = async (req, res, next) => {
+      const decodedEmail = req.decoded.email;
+      const query = { email: decodedEmail };
+      const user = await usersCollection.findOne(query);
+      if (user?.role !== "seller") {
+        return res.status(403).send({ message: "forbidden access" });
+      }
+      next();
+    };
 
         //get jwt
-        app.get('/jwt', async (req, res) => {
-            const email = req.query.email;
-            const query = { email: email };
-            const user = await usersCollection.findOne(query);
+    app.get("/jwt", async (req, res) => {
+        const email = req.query.email;
+        const query = { email: email };
+        const user = await usersCollection.findOne(query);
 
-            if (user) {
-                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '7d' })
-                // console.log(token)
-                // console.log(user)
-                return res.send({ accessToken: token })
-            }
-            res.status(403).send({ accessToken: '' })
+        if (user) {
+        const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, {
+            expiresIn: "7d",
         });
+        // console.log(token)
+        // console.log(user)
+        return res.send({ accessToken: token });
+        }
+        res.status(403).send({ accessToken: "" });
+    });
 
         // FOR PAYMENT 
         app.post('/create-payment-intent', async (req, res) => {
@@ -692,11 +688,10 @@ async function run() {
 }
 run().catch(console.log);
 
-
-app.get('/', async (req, res) => {
-    res.send('server running');
+app.get("/", async (req, res) => {
+  res.send("server running");
 });
 
 app.listen(port, () => {
-    console.log(`server running on port: ${port}`);
-}); 
+  console.log(`server running on port: ${port}`);
+});
