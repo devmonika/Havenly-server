@@ -21,7 +21,9 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@clu
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 console.log('database connected');
 
+function sendBookingEmail(payment) {
 
+    const { buyer_email, category, city, date, price } = payment;
 
 // function generatePDF(data) {
 //     const doc = new PDFDocument();
@@ -79,13 +81,7 @@ async function sendBookingEmail(payment){
         <p>Total Price $${price} paid.</p>
         <p>Apartment place ${city} </p>
         <p>Thanks form Havenly.</p>
-        </div>`,
-        // attachments: [
-        //     {
-        //         filename: 'test.pdf',
-        //         content: pdf.getBuffer(),
-        //     }
-        // ] // html body
+        </div>`, // html body
     }, function (error, info) {
         if (error) {
             console.log(error);
@@ -190,7 +186,7 @@ async function run() {
             })
         });
 
-        // store bookings payments info 
+        // store payments info 
         app.post('/payments', async (req, res) => {
             const payment = req.body;
             const result = await paymentsCollection.insertOne(payment);
@@ -415,31 +411,31 @@ async function run() {
 
 
 
-        //individual categorywise data load
-        app.get('/properties/property/:category', async (req, res) => {
-            const category = req.params.category;
-            const query = { category: category };
-            if (category === "Residential") {
-                const cate = await propertiesCollection.find(query).toArray();
-                res.send(cate);
-            }
-            else if (category === "Luxury") {
-                const cate = await propertiesCollection.find(query).toArray();
-                res.send(cate);
-            }
-            else if (category === "Commercial") {
-                const cate = await propertiesCollection.find(query).toArray();
-                res.send(cate);
-            }
-            else if (category === "Affordable Housing") {
-                const cate = await propertiesCollection.find(query).toArray();
-                res.send(cate);
-            }
-            else {
-                const cate = await propertiesCollection.find({}).toArray();
-                res.send(cate);
-            }
-        });
+        // //*individual categorywise data load
+        // app.get('/properties/property/:category', async (req, res) => {
+        //     const category = req.params.category;
+        //     const query = { category: category };
+        //     if (category === "Residential") {
+        //         const cate = await propertiesCollection.find(query).toArray();
+        //         res.send(cate);
+        //     }
+        //     else if (category === "Luxury") {
+        //         const cate = await propertiesCollection.find(query).toArray();
+        //         res.send(cate);
+        //     }
+        //     else if (category === "Commercial") {
+        //         const cate = await propertiesCollection.find(query).toArray();
+        //         res.send(cate);
+        //     }
+        //     else if (category === "Affordable Housing") {
+        //         const cate = await propertiesCollection.find(query).toArray();
+        //         res.send(cate);
+        //     }
+        //     else {
+        //         const cate = await propertiesCollection.find({}).toArray();
+        //         res.send(cate);
+        //     }
+        // });
 
 
 
@@ -506,10 +502,12 @@ async function run() {
             } else {
                 cate = await propertiesCollection.find({}).toArray();
             }
+            const count = await propertiesCollection.estimatedDocumentCount();
 
             res.send(cate);
         });
 
+        // tauhid Bhai er jonne
 
         // wishList collection 
 
@@ -595,6 +593,14 @@ async function run() {
             res.send(result);
         });
 
+        // Testimonial Collection
+        //* get 1st three testimonials
+
+        app.get('/testimonial', async (req, res) => {
+            const query = {};
+            const testimonial = await reviewsCollection.find(query).limit(3).toArray();
+            res.send(testimonial);
+        });
 
         //post report
         app.post('/report', async (req, res) => {
