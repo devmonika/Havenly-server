@@ -21,52 +21,84 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@clu
 // console.log(uri)
 
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
-console.log('database connected')
+console.log('database connected');
 
-function sendBookingEmail(payment){
 
-    const {buyer_email, category, city, date, price} = payment;
 
+// function generatePDF(data) {
+//     const doc = new PDFDocument();
+//     const chunks = [];
+
+//     // pipe the PDFDocument to an array of chunks
+//     doc.pipe(
+//         (function () {
+//             let chunks = [];
+//             return {
+//                 write: function (chunk) {
+//                     chunks.push(chunk);
+//                 },
+//                 end: function () { },
+//                 getBuffer: function () {
+//                     return Buffer.concat(chunks);
+//                 },
+//             };
+//         })()
+//     );
+
+//     // Add content to the PDF
+//     doc.text(`Name: ${data.name}`);
+//     doc.text(`Email: ${data.email}`);
+//     doc.text(`Message: ${data.message}`);
+
+//     // End the PDF
+//     doc.end();
+
+//     // return the PDF buffer
+//     return doc;
+// } //end here
+
+async function sendBookingEmail(payment){
+
+    const { buyer_email, category, city, date, price, name } = payment;
     const auth = {
         auth: {
-          api_key: process.env.EMAIL_SEND_KEY,
-          domain: process.env.EMAIL_SEND_DOMAIN
+            api_key: process.env.EMAIL_SEND_KEY,
+            domain: process.env.EMAIL_SEND_DOMAIN
         }
-      }
-      
-      const transporter = nodemailer.createTransport(mg(auth));
+    }
 
-    // let transporter = nodemailer.createTransport({
-    //     host: 'smtp.sendgrid.net',
-    //     port: 587,
-    //     auth: {
-    //         user: "apikey",
-    //         pass: process.env.SENDGRID_API_KEY
-    //     }
-    //  });
+    let transporter = nodemailer.createTransport(mg(auth));
 
-     transporter.sendMail({
+
+   await transporter.sendMail({
         from: "webtitans59@gmail.com", // verified sender email
-        to: buyer_email || "webtitans59@gmail.com", // recipient email
+        to: "webtitans59@gmail.com", // recipient email
         subject: `Your booking ${category} apartment is confirmed`, // Subject line
         text: "Hello Mr!", // plain text body
         html: `<h3>Your booking is confirmed</h3>
         <div>
         <p>Booking Date ${date}</p>
-        <p>Price $${price} paid.</p>
+        <p>Total Price $${price} paid.</p>
         <p>Apartment place ${city} </p>
         <p>Thanks form Havenly.</p>
-        </div>`, // html body
-      }, function(error, info){
+        </div>`,
+        // attachments: [
+        //     {
+        //         filename: 'test.pdf',
+        //         content: pdf.getBuffer(),
+        //     }
+        // ] // html body
+    }, function (error, info) {
         if (error) {
-          console.log(error);
+            console.log(error);
         } else {
-          console.log('Email sent: ' + info.response);
+            console.log('Email sent: ' + info.response);
         }
-      });
-     
+    });
+
 
 }
+
 
 function verifyJWT(req, res, next) {
     const authHeader = req.headers.authorization;
@@ -95,6 +127,7 @@ async function run() {
         const propertiesCollection = client.db('havenlyDB').collection('properties');
         const wishListsCollection = client.db('havenlyDB').collection('wishlist');
         const paymentsCollection = client.db('havenlyDB').collection('payments');
+        const addPromotePaymentsCollection = client.db('havenlyDB').collection('promotePayments');
         const reportCollection = client.db('havenlyDB').collection('report');
 
 
@@ -144,7 +177,7 @@ async function run() {
         });
 
         // FOR PAYMENT 
-        app.post('/create-payment-intent', async(req, res) =>{
+        app.post('/create-payment-intent', async (req, res) => {
             const booking = req.body;
             const price = booking.price;
             const amount = price * 100;
@@ -152,7 +185,7 @@ async function run() {
             const paymentIntent = await stripe.paymentIntents.create({
                 currency: 'usd',
                 amount: amount,
-                "payment_method_types":[
+                "payment_method_types": [
                     "card"
                 ]
             });
@@ -161,23 +194,39 @@ async function run() {
             })
         });
 
-        // store payments info 
-        app.post('/payments', async(req, res)=>{
+        // store bookings payments info 
+        app.post('/payments', async (req, res) => {
             const payment = req.body;
             const result = await paymentsCollection.insertOne(payment);
             const id = payment.booking_id;
-            const filter = {_id: ObjectId(id)}
-            const updatedDoc ={
-                $set:{
+            const filter = { _id: ObjectId(id) }
+            const updatedDoc = {
+                $set: {
                     paid: true,
                     transactionId: payment.transactionId
                 }
             }
             const updateResult = await propertiesCollection.updateOne(filter, updatedDoc)
             sendBookingEmail(payment);
-
             res.send(result);
-        })
+        });
+
+        // store premium service payments info 
+        app.post('/promote/payments', async (req, res) => {
+            const payment = req.body;
+            const result = await addPromotePaymentsCollection.insertOne(payment);
+            const id = payment.booking_id;
+            const filter = { _id: ObjectId(id) }
+            const updatedDoc = {
+                $set: {
+                    isPremium: "premium",
+                    // transactionId: payment.transactionId
+                }
+            }
+            const updateResult = await propertiesCollection.updateOne(filter, updatedDoc)
+            // sendBookingEmail(payment);
+            res.send(result);
+        });
 
 
         //  All Users Collections
@@ -342,6 +391,13 @@ async function run() {
         app.get('/properties', async (req, res) => {
             const query = {};
             const result = await propertiesCollection.find(query).toArray();
+            res.send(result);         
+        });
+        
+        // get all advertise properties morsalin
+        app.get('/premium/properties', async (req, res)=>{
+            const query = { isPremium: "premium"};
+            const result = await propertiesCollection.find(query).sort({_id: -1}).limit(4).toArray();
             res.send(result);
         })
 
@@ -565,8 +621,8 @@ async function run() {
             const result = await reportCollection.findOne(query);
             res.send(result);
         });
-        app.get('/',async(req,res)=>{
-            
+        app.get('/', async (req, res) => {
+
         })
 
 
@@ -597,19 +653,19 @@ async function run() {
         app.patch('/reviews/:id', async (req, res) => {
             const id = req.params.id;
             const reviews = req.body;
-             const ratings = req.body;
+            const ratings = req.body;
             const query = { _id: ObjectId(id) };
-              const options = {upsert:true}
+            const options = { upsert: true }
             const updatedDoc = {
                 $set: {
                     reviews: reviews.reviews,
-                    ratings:ratings.ratings
+                    ratings: ratings.ratings
 
                 }
 
             }
             console.log(reviews.reviews)
-            const result = await reviewsCollection.updateOne(query, updatedDoc,options);
+            const result = await reviewsCollection.updateOne(query, updatedDoc, options);
             res.send(result);
         });
 
