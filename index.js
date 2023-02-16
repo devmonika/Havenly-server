@@ -23,18 +23,18 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@clu
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 console.log('database connected')
 
-function sendBookingEmail(payment){
+function sendBookingEmail(payment) {
 
-    const {buyer_email, category, city, date, price} = payment;
+    const { buyer_email, category, city, date, price } = payment;
 
     const auth = {
         auth: {
-          api_key: process.env.EMAIL_SEND_KEY,
-          domain: process.env.EMAIL_SEND_DOMAIN
+            api_key: process.env.EMAIL_SEND_KEY,
+            domain: process.env.EMAIL_SEND_DOMAIN
         }
-      }
-      
-      const transporter = nodemailer.createTransport(mg(auth));
+    }
+
+    const transporter = nodemailer.createTransport(mg(auth));
 
     // let transporter = nodemailer.createTransport({
     //     host: 'smtp.sendgrid.net',
@@ -45,7 +45,7 @@ function sendBookingEmail(payment){
     //     }
     //  });
 
-     transporter.sendMail({
+    transporter.sendMail({
         from: "webtitans59@gmail.com", // verified sender email
         to: buyer_email || "webtitans59@gmail.com", // recipient email
         subject: `Your booking ${category} apartment is confirmed`, // Subject line
@@ -57,14 +57,14 @@ function sendBookingEmail(payment){
         <p>Apartment place ${city} </p>
         <p>Thanks form Havenly.</p>
         </div>`, // html body
-      }, function(error, info){
+    }, function (error, info) {
         if (error) {
-          console.log(error);
+            console.log(error);
         } else {
-          console.log('Email sent: ' + info.response);
+            console.log('Email sent: ' + info.response);
         }
-      });
-     
+    });
+
 
 }
 
@@ -144,7 +144,7 @@ async function run() {
         });
 
         // FOR PAYMENT 
-        app.post('/create-payment-intent', async(req, res) =>{
+        app.post('/create-payment-intent', async (req, res) => {
             const booking = req.body;
             const price = booking.price;
             const amount = price * 100;
@@ -152,7 +152,7 @@ async function run() {
             const paymentIntent = await stripe.paymentIntents.create({
                 currency: 'usd',
                 amount: amount,
-                "payment_method_types":[
+                "payment_method_types": [
                     "card"
                 ]
             });
@@ -162,13 +162,13 @@ async function run() {
         });
 
         // store payments info 
-        app.post('/payments', async(req, res)=>{
+        app.post('/payments', async (req, res) => {
             const payment = req.body;
             const result = await paymentsCollection.insertOne(payment);
             const id = payment.booking_id;
-            const filter = {_id: ObjectId(id)}
-            const updatedDoc ={
-                $set:{
+            const filter = { _id: ObjectId(id) }
+            const updatedDoc = {
+                $set: {
                     paid: true,
                     transactionId: payment.transactionId
                 }
@@ -353,7 +353,16 @@ async function run() {
             res.send(result);
         });
 
-       
+
+        
+        //get recently uploaded properties sort by date
+        app.get('/recentlyUploadedData', async (req, res) => {
+            const query = {};
+            const result = await propertiesCollection.find(query).sort({ _id: -1 }).limit(4).toArray();
+            res.send(result);
+        })
+
+
 
         // app.get('/categories/:id', async (req, res) => {
         //     const id = req.params.id;
@@ -599,19 +608,19 @@ async function run() {
         app.patch('/reviews/:id', async (req, res) => {
             const id = req.params.id;
             const reviews = req.body;
-             const ratings = req.body;
+            const ratings = req.body;
             const query = { _id: ObjectId(id) };
-              const options = {upsert:true}
+            const options = { upsert: true }
             const updatedDoc = {
                 $set: {
                     reviews: reviews.reviews,
-                    ratings:ratings.ratings
+                    ratings: ratings.ratings
 
                 }
 
             }
             console.log(reviews.reviews)
-            const result = await reviewsCollection.updateOne(query, updatedDoc,options);
+            const result = await reviewsCollection.updateOne(query, updatedDoc, options);
             res.send(result);
         });
 
