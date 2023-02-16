@@ -552,7 +552,7 @@ async function run() {
             const query = {};
             const testimonial = await reviewsCollection.find(query).limit(3).toArray();
             res.send(testimonial);
-        })
+        });
 
         //post report
         app.post('/report', async (req, res) => {
