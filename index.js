@@ -21,9 +21,9 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@clu
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 console.log('database connected');
 
-function sendBookingEmail(payment) {
+// function sendBookingEmail(payment) {
 
-    const { buyer_email, category, city, date, price } = payment;
+//     const { buyer_email, category, city, date, price } = payment;
 
 // function generatePDF(data) {
 //     const doc = new PDFDocument();
