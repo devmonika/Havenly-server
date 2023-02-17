@@ -398,10 +398,17 @@ async function run() {
         // get all advertise properties morsalin
         app.get('/premium/properties', async (req, res)=>{
             const query = { isPremium: "premium"};
-            const result = await propertiesCollection.find(query).sort({_id: -1}).limit(4).toArray();
+            const result = await propertiesCollection.find(query).limit(3).toArray();
             res.send(result);
         })
 
+        // get single property 
+        app.get('/premium/properties/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await propertiesCollection.findOne(query);
+            res.send(result);
+        });
         // get single property 
         app.get('/properties/:id', async (req, res) => {
             const id = req.params.id;
