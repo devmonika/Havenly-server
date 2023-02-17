@@ -401,6 +401,17 @@ async function run() {
             res.send(result);
         });
 
+
+        
+        //get recently uploaded properties sort by date
+        app.get('/recentlyUploadedData', async (req, res) => {
+            const query = {};
+            const result = await propertiesCollection.find(query).sort({ _id: -1 }).limit(4).toArray();
+            res.send(result);
+        })
+
+
+
         // app.get('/categories/:id', async (req, res) => {
         //     const id = req.params.id;
         //     const query = { _id: ObjectId(id) }
