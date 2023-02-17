@@ -220,6 +220,15 @@ async function run() {
             res.send(result);
         });
 
+    //# Get individual seller Payment Info
+    app.get("/payment", async (req, res) => {
+      const email = req.query.email;
+      const query = { seller_email: email };
+      const result = await paymentsCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    //  All Users Collections
 
         //  All Users Collections
 
