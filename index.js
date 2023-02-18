@@ -57,7 +57,7 @@ console.log('database connected');
 
 async function sendBookingEmail(payment){
 
-    const { buyer_email, category, city, date, price, name } = payment;
+    const { buyer_email, category, city, date, price, name, grandTotal } = payment;
     const auth = {
         auth: {
             api_key: process.env.EMAIL_SEND_KEY,
@@ -70,13 +70,13 @@ async function sendBookingEmail(payment){
 
    await transporter.sendMail({
         from: "webtitans59@gmail.com", // verified sender email
-        to: "webtitans59@gmail.com", // recipient email
+        to: buyer_email || "webtitans59@gmail.com", // recipient email
         subject: `Your booking ${category} apartment is confirmed`, // Subject line
         text: "Hello Mr!", // plain text body
         html: `<h3>Your booking is confirmed</h3>
         <div>
         <p>Booking Date ${date}</p>
-        <p>Total Price $${price} paid.</p>
+        <p>Total Price $${grandTotal} paid.</p>
         <p>Apartment place ${city} </p>
         <p>Thanks form Havenly.</p>
         </div>`,
@@ -175,8 +175,8 @@ async function run() {
         // FOR PAYMENT 
         app.post('/create-payment-intent', async (req, res) => {
             const booking = req.body;
-            const price = booking.price;
-            const amount = price * 100;
+            const price = booking.grandTotal;
+            const amount = grandTotal * 100;
 
             const paymentIntent = await stripe.paymentIntents.create({
                 currency: 'usd',
