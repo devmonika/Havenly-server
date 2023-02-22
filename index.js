@@ -408,14 +408,6 @@ async function run() {
             const query = { isPremium: "premium" };
             const result = await propertiesCollection.find(query).limit(4).toArray();
             res.send(result);
-        })
-
-        // get premium single property not use yet morsalin 
-        app.get('/premium/properties/:id', async (req, res) => {
-            const id = req.params.id;
-            const query = { _id: ObjectId(id) };
-            const result = await propertiesCollection.findOne(query);
-            res.send(result);
         });
         // get single property morsalin
         app.get('/properties/:id', async (req, res) => {
