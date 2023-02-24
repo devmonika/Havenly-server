@@ -262,13 +262,10 @@ async function run() {
       if (users?.role !== "admin") {
         return res.status(403).send({ message: "forbidden access" });
       }
-      // else if(users?.isVerified =='verified'){
-      //     return res.status(403).send({message: 'user already verified'});
-      // }
 
-      const email = req.params.email;
+      const id = req.params.id;
       // console.log(email)
-      const filter = { email: email };
+      const filter = { _id: ObjectId(id) };
       const options = { upsert: true };
       const updatedDoc = {
         $set: {
@@ -342,11 +339,16 @@ async function run() {
     });
     // Get all properties
     app.get("/properties", async (req, res) => {
-      const query = {};
-      const properties = await propertiesCollection.find(query).toArray();
+      const page = parseInt(req.query.page);
+      const size = parseInt(req.query.size);
+      // console.log(page, size)
+      const query = {}
+      const properties = await propertiesCollection
+       .find(query).skip(page*size)
+       .limit(size).toArray();
       const count = await propertiesCollection.estimatedDocumentCount();
-    //   res.send({count, properties});
-      res.send(properties);
+      res.send({ count, properties });
+      // res.send(properties);
     });
 
     // get all advertise properties (morsalin)
@@ -380,7 +382,7 @@ async function run() {
       const result = await propertiesCollection
         .find(query)
         .sort({ _id: -1 })
-        .limit(4)
+        .limit(3)
         .toArray();
       res.send(result);
     });
