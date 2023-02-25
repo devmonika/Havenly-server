@@ -117,6 +117,7 @@ async function run() {
         const GoogleusersCollection = client.db('havenlyDB').collection('GoogleSignUp');
         const categoriesCollection = client.db('havenlyDB').collection('categories');
         const reviewsCollection = client.db('havenlyDB').collection('reviews');
+        const sellerReviewsCollection = client.db('havenlyDB').collection('sellerReviews');
         const propertiesCollection = client.db('havenlyDB').collection('properties');
         const wishListsCollection = client.db('havenlyDB').collection('wishlist');
         const paymentsCollection = client.db('havenlyDB').collection('payments');
@@ -756,6 +757,20 @@ async function run() {
             
         });
 
+        // seller review 
+        // get all the reviews
+        app.get('/seller-reviews', async (req, res) => {
+            const query = {};
+            const sellerreviews = await sellerReviewsCollection.find(query).toArray();
+            res.send(sellerreviews);
+        });
+
+        // post a review
+        app.post('/seller-reviews', async (req, res) => {
+            const sellerreview = req.body;
+            const result = await sellerReviewsCollection.insertOne(sellerreview);
+            res.send(result);
+        });
     }
     finally {
 
