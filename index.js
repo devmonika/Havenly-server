@@ -293,6 +293,7 @@ async function run() {
 
     // Categories Collection
     // get all the categories
+    // / sazzad
     app.get("/categories", async (req, res) => {
       const query = {};
       const categories = await categoriesCollection.find(query).toArray();
@@ -328,6 +329,7 @@ async function run() {
     });
 
     //* add property
+    // sazzad
     app.post("/properties", async (req, res) => {
       const property = req.body;
       const result = await propertiesCollection.insertOne(property);
@@ -380,6 +382,8 @@ async function run() {
       res.send(result);
     });
 
+    // category wise property
+    // sazzad
     app.get("/properties/property/:category", async (req, res) => {
       const category = req.params.category;
       const query = { category: category };
@@ -400,20 +404,16 @@ async function run() {
     // wishList collection
 
     // *get wishlist for a specific user
+    // sazzad
     app.get("/wishlist", async (req, res) => {
       const email = req.query.email;
-      // const decodedEmail = req.decoded.email;
-
-      // if (email !== decodedEmail) {
-      //     res.status(403).send({ message: 'Forbidden Access' });
-      // }
-
       const query = { email: email };
       const wishlist = await wishListsCollection.find(query).toArray();
       res.send(wishlist);
     });
 
     // * add property to wishlist
+    // sazzad
     app.post("/wishlist", verifyJWT, async (req, res) => {
       const wishlist = req.body;
       const query = {
@@ -433,31 +433,8 @@ async function run() {
       res.send(result);
     });
 
-    // // * updated added button
-
-    // app.patch('/wishlist', verifyJWT, async (req, res) => {
-    //     const wishlist = req.body;
-    //     const query = {
-    //         address: wishlist.address,
-    //         email: wishlist.email,
-    //         userName: wishlist.userName,
-    //     };
-
-    //     const options = { upsert: true };
-    //     const updatedDoc = {
-    //         $set: { added: wishlist.added }
-    //     }
-
-    //     const result = await wishListsCollection.updateOne(
-    //         query,
-    //         options,
-    //         updatedDoc
-    //     );
-
-    //     res.send(result);
-    // });
-
     // * delete an item from wishlist
+    // sazzad
 
     app.delete("/wishlist/:id", async (req, res) => {
       const id = req.params.id;
@@ -468,6 +445,7 @@ async function run() {
 
     // Reviews Collection
     // get all the reviews
+    // sazzad
     app.get("/reviews", async (req, res) => {
       const query = {};
       const reviews = await reviewsCollection.find(query).toArray();
@@ -475,6 +453,7 @@ async function run() {
     });
 
     // post a review
+    // sazzad
     app.post("/reviews", async (req, res) => {
       const review = req.body;
       const result = await reviewsCollection.insertOne(review);
@@ -483,7 +462,7 @@ async function run() {
 
     // Testimonial Collection
     //* get 1st three testimonials
-
+    // sazzad
     app.get("/testimonial", async (req, res) => {
       const query = {};
       const testimonial = await reviewsCollection
