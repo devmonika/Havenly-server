@@ -45,7 +45,7 @@ async function sendBookingEmail(payment) {
       html: `<h3>Your booking is confirmed</h3>
         <div>
         <p>Booking Date ${date}</p>
-        <p>Total Price $${price} paid.</p>
+        <p>Total Price $${grandTotal} paid.</p>
         <p>Apartment place ${city} </p>
         <p>Thanks form Havenly.</p>
         </div>`, // html body
@@ -61,19 +61,19 @@ async function sendBookingEmail(payment) {
 }
 
 function verifyJWT(req, res, next) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    return res.status(401).send("unauthorized access");
-  }
-
-  const token = authHeader.split(" ")[1];
-  jwt.verify(token, process.env.ACCESS_TOKEN, function (err, decoded) {
-    if (err) {
-      return res.status(403).send({ message: "forbidden access" });
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        return res.status(401).send("unauthorized access");
     }
-    req.decoded = decoded;
-    next();
-  });
+
+    const token = authHeader.split(" ")[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN, function (err, decoded) {
+        if (err) {
+            return res.status(403).send({ message: "forbidden access" });
+        }
+        req.decoded = decoded;
+        next();
+    });
 }
 
 async function run() {
@@ -97,86 +97,93 @@ async function run() {
       .collection("promotePayments");
     const reportCollection = client.db("havenlyDB").collection("report");
 
-    const verifyAdmin = async (req, res, next) => {
-      const decodedEmail = req.decoded.email;
-      const query = { email: decodedEmail };
-      const user = await usersCollection.findOne(query);
-      if (user?.role !== "admin") {
-        return res.status(403).send({ message: "forbidden access" });
-      }
-      next();
-    };
-    const verifyBuyer = async (req, res, next) => {
-      const decodedEmail = req.decoded.email;
-      const query = { email: decodedEmail };
-      const user = await usersCollection.findOne(query);
-      if (user?.role !== "buyer") {
-        return res.status(403).send({ message: "forbidden access" });
-      }
-      next();
-    };
-    const verifySeller = async (req, res, next) => {
-      const decodedEmail = req.decoded.email;
-      const query = { email: decodedEmail };
-      const user = await usersCollection.findOne(query);
-      if (user?.role !== "seller") {
-        return res.status(403).send({ message: "forbidden access" });
-      }
-      next();
-    };
+        const verifyAdmin = async (req, res, next) => {
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await usersCollection.findOne(query);
+            if (user?.role !== "admin") {
+                return res.status(403).send({ message: "forbidden access" });
+            }
+            next();
+        };
+        const verifyBuyer = async (req, res, next) => {
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await usersCollection.findOne(query);
+            if (user?.role !== "buyer") {
+                return res.status(403).send({ message: "forbidden access" });
+            }
+            next();
+        };
+        const verifySeller = async (req, res, next) => {
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await usersCollection.findOne(query);
+            if (user?.role !== "seller") {
+                return res.status(403).send({ message: "forbidden access" });
+            }
+            next();
+        };
 
-    //get jwt
-    app.get("/jwt", async (req, res) => {
-      const email = req.query.email;
-      const query = { email: email };
-      const user = await usersCollection.findOne(query);
+        //get jwt
+        app.get("/jwt", async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
 
-      if (user) {
-        const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, {
-          expiresIn: "7d",
+            if (user) {
+                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, {
+                    expiresIn: "7d",
+                });
+                // console.log(token)
+                // console.log(user)
+                return res.send({ accessToken: token });
+            }
+            res.status(403).send({ accessToken: "" });
         });
-        // console.log(token)
-        // console.log(user)
-        return res.send({ accessToken: token });
-      }
-      res.status(403).send({ accessToken: "" });
-    });
 
-    // FOR PAYMENT
-    app.post("/create-payment-intent", async (req, res) => {
-      const booking = req.body;
-      const price = booking.price;
-      const amount = price * 100;
+        // FOR PAYMENT 
+        app.post('/create-payment-intent', async (req, res) => {
+            const booking = req.body;
+            const grandTotal = booking.grandTotal;
+            const amount = grandTotal * 100;
 
-      const paymentIntent = await stripe.paymentIntents.create({
-        currency: "usd",
-        amount: amount,
-        payment_method_types: ["card"],
-      });
-      res.send({
-        clientSecret: paymentIntent.client_secret,
-      });
-    });
+            try {
 
-    // store payments info
-    app.post("/payments", async (req, res) => {
-      const payment = req.body;
-      const result = await paymentsCollection.insertOne(payment);
-      const id = payment.booking_id;
-      const filter = { _id: ObjectId(id) };
-      const updatedDoc = {
-        $set: {
-          paid: true,
-          transactionId: payment.transactionId,
-        },
-      };
-      const updateResult = await propertiesCollection.updateOne(
-        filter,
-        updatedDoc
-      );
-      sendBookingEmail(payment);
-      res.send(result);
-    });
+                const paymentIntent = await stripe.paymentIntents.create({
+                    currency: 'usd',
+                    amount: amount,
+                    "payment_method_types": [
+                        "card"
+                    ]
+                });
+                res.send({
+                    clientSecret: paymentIntent.client_secret,
+                });
+            } catch (error) {
+                console.error(error);
+                 res.status(500).send({ error: 'Unable to create payment intent.' });
+            }
+        });
+
+        // store payments info 
+        app.post('/payments', async (req, res) => {
+            const payment = req.body;
+            const result = await paymentsCollection.insertOne(payment);
+            const buyer_email = payment.buyer_email;
+            const id = payment.booking_id;
+            const filter = { _id: ObjectId(id) }
+            const updatedDoc = {
+                $set: {
+                    buyer_email: buyer_email,
+                    paid: true,
+                    transactionId: payment.transactionId
+                }
+            }
+            const updateResult = await propertiesCollection.updateOne(filter, updatedDoc)
+            sendBookingEmail(payment);
+            res.send(result);
+        });
 
     // store premium service payments info
     app.post("/promote/payments", async (req, res) => {
@@ -198,15 +205,15 @@ async function run() {
       res.send(result);
     });
 
-    //# Get individual seller Payment Info
-    app.get("/payment", async (req, res) => {
-      const email = req.query.email;
-      const query = { seller_email: email };
-      const result = await paymentsCollection.find(query).toArray();
-      res.send(result);
-    });
+        //# Get individual seller Payment Info
+        app.get("/payment", async (req, res) => {
+            const email = req.query.email;
+            const query = { seller_email: email };
+            const result = await paymentsCollection.find(query).toArray();
+            res.send(result);
+        });
 
-    //  All Users Collections
+        //  All Users Collections
 
     //  All Users Collections
 
@@ -255,26 +262,23 @@ async function run() {
       if (users?.role !== "admin") {
         return res.status(403).send({ message: "forbidden access" });
       }
-      // else if(users?.isVerified =='verified'){
-      //     return res.status(403).send({message: 'user already verified'});
-      // }
 
-      const email = req.params.email;
+      const id = req.params.id;
       // console.log(email)
-      const filter = { email: email };
+      const filter = { _id: ObjectId(id) };
       const options = { upsert: true };
       const updatedDoc = {
         $set: {
           isVerified: "verified",
         },
       };
-      // const result2 = await productsCollection.updateMany(filter, updatedDoc,options);
+      const result2 = await productsCollection.updateMany(filter, updatedDoc,options);
       const result = await usersCollection.updateOne(
         filter,
         updatedDoc,
         options
       );
-      res.send({ result });
+      res.send({ result, result2 });
     });
 
     // get all buyers
@@ -335,25 +339,35 @@ async function run() {
     });
     // Get all properties
     app.get("/properties", async (req, res) => {
-      const query = {};
-      const result = await propertiesCollection.find(query).toArray();
-      res.send(result);
+      const page = parseInt(req.query.page);
+      const size = parseInt(req.query.size);
+      // console.log(page, size)
+      const query = {}
+      const properties = await propertiesCollection
+       .find(query).skip(page*size)
+       .limit(size).toArray();
+      const count = await propertiesCollection.estimatedDocumentCount();
+      res.send({ count, properties });
+      // res.send(properties);
     });
 
-    // get all advertise properties morsalin
+    // get all advertise properties (morsalin)
     app.get("/premium/properties", async (req, res) => {
       const query = { isPremium: "premium" };
-      const result = await propertiesCollection.find(query).limit(3).toArray();
+      const result = await propertiesCollection.find(query).limit(4).toArray();
       res.send(result);
     });
 
-    // get single property
-    app.get("/premium/properties/:id", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: ObjectId(id) };
-      const result = await propertiesCollection.findOne(query);
-      res.send(result);
-    });
+     //  get my orders properties with user email (morsalin)
+     app.get('/orders/property', async(req, res)=>{
+        const email = req.query.email;
+        const query = {buyer_email: email};
+        // console.log(query)
+        const bookings = await paymentsCollection.find(query).toArray();
+        res.send(bookings);
+    })
+   
+
     // get single property
     app.get("/properties/:id", async (req, res) => {
       const id = req.params.id;
@@ -368,7 +382,7 @@ async function run() {
       const result = await propertiesCollection
         .find(query)
         .sort({ _id: -1 })
-        .limit(4)
+        .limit(3)
         .toArray();
       res.send(result);
     });
@@ -583,9 +597,9 @@ async function run() {
 run().catch(console.log);
 
 app.get("/", async (req, res) => {
-  res.send("server running");
+    res.send("server running");
 });
 
 app.listen(port, () => {
-  console.log(`server running on port: ${port}`);
+    console.log(`server running on port: ${port}`);
 });
